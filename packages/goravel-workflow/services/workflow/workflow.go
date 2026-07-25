@@ -10,13 +10,14 @@ import (
 
 	"reflect"
 
+	"goravel/packages/goravel-workflow/controllers/common"
+	"goravel/packages/goravel-workflow/models"
+	"goravel/packages/goravel-workflow/services/workflow/official_plugins"
+
 	"github.com/goravel/framework/contracts/database/orm"
 	"github.com/goravel/framework/facades"
 	"github.com/goravel/framework/support/carbon"
 	"github.com/spf13/cast"
-	"goravel/packages/goravel-workflow/controllers/common"
-	"goravel/packages/goravel-workflow/models"
-	"goravel/packages/goravel-workflow/services/workflow/official_plugins"
 )
 
 // Workflow concurrency type constants
@@ -230,23 +231,12 @@ func (w *Workflow) SetFirstProcessAuditor(entry models.Entry, flowlink models.Fl
 				return err
 			}
 
-			// Check if next process has conditional branches — evaluate them at entry creation time
+			// Advance directly to the next step — condition evaluation is deferred to Transfer()
 			nextProcID := cast.ToInt(flowlink.NextProcessID)
-			condCount, _ := tx.Model(&models.Flowlink{}).Where("process_id=?", nextProcID).Where("type=?", "Condition").Count()
-			if condCount >= 1 {
-				// Evaluate conditions to determine which branch to take
-				auditor_ids, nextProcID, process_name, err = w.evalConditionsAtCreate(tx, &entry, nextProcID)
-				if err != nil {
-					return err
-				}
-				process_id = nextProcID
-				entry.ProcessID = cast.ToUint(nextProcID)
-			} else {
-				auditor_ids = w.GetProcessAuditorIds(entry, nextProcID)
-				process_id = nextProcID
-				process_name = flowlink.NextProcess.ProcessName
-				entry.ProcessID = cast.ToUint(flowlink.NextProcessID)
-			}
+			auditor_ids = w.GetProcessAuditorIds(entry, nextProcID)
+			process_id = nextProcID
+			process_name = flowlink.NextProcess.ProcessName
+			entry.ProcessID = cast.ToUint(flowlink.NextProcessID)
 		} else {
 			auditor_ids = w.GetProcessAuditorIds(entry, cast.ToInt(flowlink.ProcessID))
 			process_id = cast.ToInt(flowlink.ProcessID)
@@ -489,7 +479,7 @@ func uniqueSlice(slice []int) []int {
 }
 
 // Transfer is the core workflow engine that handles approval routing
-func (w *Workflow) Transfer(process_id int, user models.Emp, content string) error {
+func (w *Workflow) Transfer(process_id int, user models.Emp, content string, formData map[string]any) error {
 	query := facades.Orm().Query()
 
 	// Resolve user to emp
@@ -510,6 +500,14 @@ func (w *Workflow) Transfer(process_id int, user models.Emp, content string) err
 
 	if proc.ID == 0 {
 		return errors.New("未绑定员工，请设置员工绑定")
+	}
+
+	// If current step is the initiator node (position=0), treat "pass" as resend:
+	// mark this initiator proc done and advance to the next step like a fresh entry
+	var currentProcess models.Process
+	query.Model(&models.Process{}).Where("id=?", proc.ProcessID).First(&currentProcess)
+	if currentProcess.Position == 0 {
+		return w.transferFromInitiator(query, &proc, content, emp, formData)
 	}
 
 	// Check if this process step has concurrency mode
@@ -581,6 +579,44 @@ func (w *Workflow) Transfer(process_id int, user models.Emp, content string) err
 	return w.handleNextStep(query, &proc, &fklink, content, emp)
 }
 
+// transferFromInitiator handles the case where the initiator (position=0) clicks "pass"
+// after being rejected back — equivalent to resend, advancing to the next step.
+func (w *Workflow) transferFromInitiator(query orm.Query, proc *models.Proc, content string, emp models.Emp, formData map[string]any) error {
+	// Find the Condition flowlink from the initiator step for routing
+	var fklink models.Flowlink
+	query.Model(&models.Flowlink{}).With("NextProcess").
+		Where("process_id=?", proc.ProcessID).
+		Where("type=?", "Condition").
+		Order("sort ASC").
+		First(&fklink)
+	if fklink.ID == 0 {
+		return errors.New("发起人节点未配置流转关系")
+	}
+
+	// Update entrydatas from form data
+	for key, val := range formData {
+		if key == "flow_id" || key == "id" || key == "entry_id" || key == "process_id" || key == "content" || key == "proc_id" {
+			continue
+		}
+		fieldValue := cast.ToString(val)
+		var existing models.EntryData
+		query.Model(&models.EntryData{}).Where("entry_id=? AND field_name=?", proc.EntryID, key).First(&existing)
+		if existing.ID > 0 {
+			query.Model(&models.EntryData{}).Where("id=?", existing.ID).Update("field_value", fieldValue)
+		}
+	}
+
+	// Mark the initiator proc as approved with content
+	proc.Status = models.ProcStatusApproved
+	proc.Content = content
+	proc.AuditorID = cast.ToInt(emp.ID)
+	proc.AuditorName = emp.Name
+	query.Model(&models.Proc{}).Where("id=?", proc.ID).Save(proc)
+
+	// Advance to the next step, skipping already-passed steps (all should be skipped from rejectToNode)
+	return w.handleNextStep(query, proc, &fklink, content, emp)
+}
+
 // transferWithConditions handles conditional branch routing
 func (w *Workflow) transferWithConditions(query orm.Query, proc *models.Proc, content string, emp models.Emp) error {
 	pvar := models.ProcessVar{}
@@ -589,7 +625,7 @@ func (w *Workflow) transferWithConditions(query orm.Query, proc *models.Proc, co
 	}
 
 	flowlinks := []models.Flowlink{}
-	query.Model(&models.Flowlink{}).Where("process_id=?", proc.ProcessID).Where("type=?", "Condition").Order("sort ASC").Find(&flowlinks)
+	query.Model(&models.Flowlink{}).With("NextProcess").Where("process_id=?", proc.ProcessID).Where("type=?", "Condition").Order("sort ASC").Find(&flowlinks)
 
 	var matchedFlowlink models.Flowlink
 	field := pvar.ExpressionField
@@ -660,7 +696,16 @@ func (w *Workflow) transferWithConditions(query orm.Query, proc *models.Proc, co
 	}
 
 	if matchedFlowlink.ID == 0 {
-		return errors.New("未找到符合条件的流转条件，无法流转")
+		// Build a detailed error message
+		var entryData models.EntryData
+		query.Model(&models.EntryData{}).
+			Where("entry_id=? AND flow_id=? AND field_name=?", proc.EntryID, proc.FlowID, field).
+			First(&entryData)
+		fieldValue := ""
+		if entryData.ID > 0 {
+			fieldValue = entryData.FieldValue
+		}
+		return errors.New(FormatConditionError(field, fieldValue, flowlinks))
 	}
 
 	var withFlowlink models.Flowlink
@@ -755,7 +800,7 @@ func (w *Workflow) handleLastStep(query orm.Query, proc *models.Proc, fklink *mo
 // handleParentAfterChildComplete handles parent workflow when child completes
 func (w *Workflow) handleParentAfterChildComplete(query orm.Query, proc *models.Proc, content string, emp models.Emp) error {
 	parentEntry := models.Entry{}
-	query.Model(&models.Entry{}).Where("id=?", proc.Entry.Pid).First(&parentEntry)
+	query.Model(&models.Entry{}).Where("id=?", proc.Entry.Pid).With("EnterProcess").First(&parentEntry)
 
 	if parentEntry.EnterProcess.ChildAfter == 1 {
 		parentEntry.Status = models.ProcStatusApproved
@@ -880,8 +925,8 @@ func (w *Workflow) goToProcess(query orm.Query, entry *models.Entry, processID i
 }
 
 // Pass is an alias for Transfer
-func (w *Workflow) Pass(process_id int, user models.Emp, content string) error {
-	return w.Transfer(process_id, user, content)
+func (w *Workflow) Pass(process_id int, user models.Emp, content string, formData map[string]any) error {
+	return w.Transfer(process_id, user, content, formData)
 }
 
 // UnPass rejects the current approval task and sends it back to the previous step
@@ -973,7 +1018,7 @@ func (w *Workflow) rejectToNode(query orm.Query, proc *models.Proc, emp models.E
 		proc.Content = content
 		proc.AuditorID = cast.ToInt(emp.ID)
 		proc.AuditorName = emp.Name
-		query.Model(&models.Proc{}).Where("id=?", proc.ID).Save(&proc)
+		query.Model(&models.Proc{}).Where("id=?", proc.ID).Save(proc)
 
 		// Mark all remaining pending/approved procs as skipped (between target and current)
 		var remainingProcs []models.Proc
@@ -1030,7 +1075,7 @@ func (w *Workflow) rejectToNode(query orm.Query, proc *models.Proc, emp models.E
 	proc.Content = content
 	proc.AuditorID = cast.ToInt(emp.ID)
 	proc.AuditorName = emp.Name
-	query.Model(&models.Proc{}).Where("id=?", proc.ID).Save(&proc)
+	query.Model(&models.Proc{}).Where("id=?", proc.ID).Save(proc)
 
 	w.NotifySendOne(proc.Entry.EmpID)
 	return nil

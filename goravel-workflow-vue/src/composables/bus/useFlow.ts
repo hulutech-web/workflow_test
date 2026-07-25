@@ -65,6 +65,12 @@ export default () => {
       data: data,
     });
   };
+  const destroyFlow = async (id) => {
+    return await http.request({
+      url: `flow/${id}`,
+      method: "DELETE",
+    });
+  };
 
 
   const gridOptions = reactive<VxeGridProps<RowVO>>({
@@ -298,5 +304,6 @@ export default () => {
     publishFlow,
     loadFlowList,
     loadFlowTemplateform,
+    destroyFlow,
   };
 };

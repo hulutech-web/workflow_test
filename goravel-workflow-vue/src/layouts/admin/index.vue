@@ -31,8 +31,8 @@ const changeCollapse = (val) => {
                     <Navbar @changeCollapse="changeCollapse" />
                 </a-layout-header>
                 <a-layout-content style='position:relative;' class='layout-content'>
-                    <div id='admin_content' style="padding:15px;box-sizing: border-box;">
-                        <section style="background-color: white;min-height: 800px;padding: 5px;box-sizing: border-box;">
+                    <div id='admin_content' style="padding:4px;box-sizing: border-box;">
+                        <section style="background-color: white;min-height: 800px;padding: 0;box-sizing: border-box;">
                             <router-view />
                         </section>
                         <div id='spinDiv'>

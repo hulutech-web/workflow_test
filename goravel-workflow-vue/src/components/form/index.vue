@@ -1,9 +1,6 @@
 <template>
     <div v-if="formFields">
-        <a-form :model="formState" ref="formRef" v-bind="{
-            labelCol: { span: 8 },
-            wrapperCol: { span: 16 },
-        }" style="max-width: 600px">
+        <a-form :model="formState" ref="formRef" :label-col="{ span: 6 }" :wrapper-col="{ span: 18 }" style="max-width: 100%">
             <div v-for="(field, index) in formFields" :key="index" v-if="formFields.length > 0">
                 <a-form-item :label="field.field_name" v-if="field['field_type'] == 'text'" :name="field.field"
                     :rules="[rulesStore.getRule(field.field) ? rulesStore.getRule(field.field) : { required: false }]">
@@ -69,10 +66,7 @@
 
             </div>
             <slot name="default">
-                <a-form-item :wrapper-col="{
-                    wrapperCol: { span: 16 },
-                    offset: 8
-                }">
+                <a-form-item :wrapper-col="{ span: 18, offset: 6 }">
                     <a-button type="primary" @click="submit">提交</a-button>
                 </a-form-item>
             </slot>
@@ -198,7 +192,8 @@ const clearValidate = () => {
 
 defineExpose({
     validate,
-    clearValidate
+    clearValidate,
+    getFormData: () => formState.value,
 })
 
 </script>

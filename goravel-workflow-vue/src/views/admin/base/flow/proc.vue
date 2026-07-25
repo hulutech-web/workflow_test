@@ -1,63 +1,59 @@
 <template>
-    <div>
-        <a-row>
-            <a-col :span="8"></a-col>
-            <a-col :span="8">
-                <div class="p-3">
-                    <a-watermark content="已发起">
-                        <div>
-                            <a-card>
-                                <p class="text-2xl font-bold mb-3 text-center">
-                                    <span>{{ flow.flow_name }}</span>
-                                    <a-tag v-if="flow.Template" color="blue" class="ml-2">
-                                        {{ flow.Template.template_name }}
-                                    </a-tag>
-                                </p>
+    <div class="p-4">
+        <div class="mb-4">
+            <a-button type="link" @click="goBack">
+                <ArrowLeftOutlined /> 返回
+            </a-button>
+        </div>
+        <div class="flex justify-center">
+            <div class="w-full" style="max-width: 700px">
+                <a-watermark content="已发起">
+                    <a-card>
+                        <template #title>
+                            <div class="text-center">
+                                <span class="text-lg font-semibold">{{ flow.flow_name }}</span>
+                                <a-tag v-if="flow.Template" color="blue" class="ml-2">
+                                    {{ flow.Template.template_name }}
+                                </a-tag>
+                            </div>
+                        </template>
 
-                                <Form :fields="fillFields" @submit="onSubmit" :entryDatas="entryDatas"
-                                    ref="huluFormRef">
-                                    <div>
-                                        <p class="text-xl">批复内容：</p>
-                                        <a-textarea v-model:value="content" placeholder="请填写批复内容" :rows="4" />
-                                        <p class="mt-3">
-                                            <a-space>
-                                                <a-button type="primary" @click="pass">
-                                                    同意
-                                                </a-button>
-                                                <a-button type="primary" @click="unpass">
-                                                    驳回
-                                                </a-button>
-                                                <a-button type="primary" danger @click="showUnpassTo">驳回至节点</a-button>
-                                                <a-button @click="showAddSign">加签</a-button>
-                                                <a-button @click="showTransfer">转交</a-button>
-                                                <a-button @click="showComment">评论</a-button>
-                                            </a-space>
-                                        </p>
-                                    </div>
-                                </Form>
-                            </a-card>
-                        </div>
-                        <!-- Comment thread -->
-                        <a-card v-if="comments.length > 0" title="评论记录" class="mt-3">
-                            <a-list item-layout="horizontal" :data-source="comments">
-                                <template #renderItem="{ item }">
-                                    <a-list-item>
-                                        <a-list-item-meta>
-                                            <template #title>{{ item.emp_name || '未知用户' }}</template>
-                                            <template #description>{{ item.created_at }}</template>
-                                        </a-list-item-meta>
-                                        <template #actions>
-                                            <span>{{ item.content }}</span>
-                                        </template>
-                                    </a-list-item>
+                        <Form :fields="fillFields" @submit="onSubmit" :entryDatas="entryDatas"
+                            ref="huluFormRef">
+                            <div>
+                                <div class="mb-2 text-base font-medium">批复内容：</div>
+                                <a-textarea v-model:value="content" placeholder="请填写批复内容" :rows="4" />
+                                <div class="mt-3 flex flex-wrap gap-2">
+                                    <a-button type="primary" @click="pass">同意</a-button>
+                                    <a-button type="primary" danger @click="unpass">驳回</a-button>
+                                    <a-button @click="showUnpassTo">驳回至节点</a-button>
+                                    <a-button @click="showAddSign">加签</a-button>
+                                    <a-button @click="showTransfer">转交</a-button>
+                                    <a-button @click="showComment">评论</a-button>
+                                </div>
+                            </div>
+                        </Form>
+                    </a-card>
+                </a-watermark>
+
+                <!-- Comment thread -->
+                <a-card v-if="comments.length > 0" title="评论记录" class="mt-3">
+                    <a-list item-layout="horizontal" :data-source="comments">
+                        <template #renderItem="{ item }">
+                            <a-list-item>
+                                <a-list-item-meta>
+                                    <template #title>{{ item.emp_name || '未知用户' }}</template>
+                                    <template #description>{{ item.created_at }}</template>
+                                </a-list-item-meta>
+                                <template #actions>
+                                    <span>{{ item.content }}</span>
                                 </template>
-                            </a-list>
-                        </a-card>
-                    </a-watermark>
-                </div>
-            </a-col>
-            <a-col :span="8"></a-col>
-        </a-row>
+                            </a-list-item>
+                        </template>
+                    </a-list>
+                </a-card>
+            </div>
+        </div>
 
         <!-- Add Sign Modal -->
         <a-modal v-model:open="addSignOpen" title="加签" centered @ok="handleAddSign">
@@ -117,6 +113,8 @@ import EmpSearch from '@/components/empsearch/index.vue';
 const { loadFlowEntryConfig, getEntryData } = useEntry();
 const { setPass, setUnPass, addSign, transferProc, addComment, getComments, getRejectableProcesses, indexProcs } = useProc();
 const route = useRoute();
+const router = useRouter()
+const goBack = () => router.back()
 
 const flow_id = route.params.flow_id
 const entry_id = route.params.entry_id;
@@ -165,7 +163,9 @@ const onSubmit = async (values) => {
 
 const pass = async () => {
     try {
+        const formData = huluFormRef.value?.getFormData?.() || {}
         await setPass({
+            ...formData,
             content: content.value,
             process_id: process_id,
             entry_id: entry_id,

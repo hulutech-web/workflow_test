@@ -1,8 +1,8 @@
 <template>
-    <div class="p-3">
+    <div>
         <a-card>
-            <a-form ref="formRef" :model="flowState" :label-col="{ style: { width: '150px' } }"
-                :wrapper-col="{ span: 6 }">
+            <a-form ref="formRef" :model="flowState" :label-col="{ span: 6 }"
+                :wrapper-col="{ span: 16 }">
                 <a-form-item label="流程编码" name="flow_no"
                     :rules="[rulesStore.getRule('flow_no') ? rulesStore.getRule('flow_no') : { required: false }]">
                     <a-input v-model:value="flowState.flow_no"></a-input>

@@ -1,15 +1,24 @@
 <template>
-    <div class="p-3">
-        <p>
-            创建流程
-            <Form />
-        </p>
+    <div class="p-4">
+        <div class="mb-4">
+            <a-button type="link" @click="goBack">
+                <ArrowLeftOutlined /> 返回
+            </a-button>
+        </div>
+        <div class="flex justify-center">
+            <div class="w-full" style="max-width: 700px">
+                <a-card title="创建流程">
+                    <Form />
+                </a-card>
+            </div>
+        </div>
     </div>
-
 </template>
 
 <script setup lang='ts'>
 import Form from './form.vue'
+const router = useRouter()
+const goBack = () => router.back()
 </script>
 
 <style></style>

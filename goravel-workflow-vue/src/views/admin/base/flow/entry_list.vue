@@ -23,6 +23,15 @@
                     <a-badge v-if="row.status == -1" status="error" text="已驳回" />
                     <a-badge v-if="row.status == -2" status="error" text="已撤销" />
                 </template>
+                <template #flow_name="{ row }">
+                    <span>{{ row.Flow?.flow_name || row.flow?.flow_name || '-' }}</span>
+                </template>
+                <template #emp_name="{ row }">
+                    <span>{{ row.Emp?.name || row.emp?.name || '-' }}</span>
+                </template>
+                <template #process_name="{ row }">
+                    <span>{{ row.Process?.process_name || row.process?.process_name || '-' }}</span>
+                </template>
                 <template #action="{ row }">
                     <a-button-group>
                         <a-button type="link" @click="viewEntry(row)">查看</a-button>
@@ -60,7 +69,17 @@
 
         <!-- Procs Modal -->
         <a-modal :footer="false" v-model:open="procsOpen" title="进程明细" centered width="900px">
-            <vxe-grid v-bind="procsGridOptions" :data="currentProcs" />
+            <vxe-grid v-bind="procsGridOptions" :data="currentProcs">
+                <template #proc_status="{ row }">
+                    <a-badge v-if="row.status == 0" status="processing" text="处理中" />
+                    <a-badge v-if="row.status == 1" status="success" text="通过" />
+                    <a-badge v-if="row.status == 9" status="success" text="通过" />
+                    <a-badge v-if="row.status == -1" status="error" text="驳回" />
+                    <a-badge v-if="row.status == -2" status="error" text="撤销" />
+                    <a-badge v-if="row.status == 3" status="default" text="已转交" />
+                    <a-badge v-if="row.status == 4" status="default" text="已跳过" />
+                </template>
+            </vxe-grid>
         </a-modal>
     </div>
 </template>
@@ -84,9 +103,9 @@ const gridOptions = {
     columns: [
         { field: 'id', title: 'ID', width: 80 },
         { field: 'title', title: '标题', minWidth: 200 },
-        { field: 'flow_name', title: '流程名称', minWidth: 150 },
-        { field: 'emp_name', title: '发起人', width: 100 },
-        { field: 'process_name', title: '当前环节', width: 120 },
+        { title: '流程名称', minWidth: 150, slots: { default: 'flow_name' } },
+        { title: '发起人', width: 100, slots: { default: 'emp_name' } },
+        { title: '当前环节', width: 120, slots: { default: 'process_name' } },
         { title: '状态', slotName: 'status', width: 100 },
         { field: 'created_at', title: '创建时间', width: 180 },
         { title: '操作', slotName: 'action', width: 250 },

@@ -1,45 +1,45 @@
 <template>
-    <div>
-        <a-row>
-            <a-col :span="8"></a-col>
-            <a-col :span="8">
-                <div class="p-3">
-                    <a-watermark :content="entry.status === -1 || entry.status === -2 ? '已驳回' : '已发起'">
-                        <div>
-                            <a-card>
-                                <p class="text-2xl font-bold mb-3 text-center">
-                                    <span>{{ flow.flow_name }}</span>
-                                <div>
-                                    <a-tag v-if="flow.Template" color="blue" class="ml-2">
-                                        {{ flow.Template.template_name }}
-                                    </a-tag>
+    <div class="p-4">
+        <div class="mb-4">
+            <a-button type="link" @click="goBack">
+                <ArrowLeftOutlined /> 返回
+            </a-button>
+        </div>
+        <div class="flex justify-center">
+            <div class="w-full" style="max-width: 700px">
+                <a-watermark :content="entry.status === -1 || entry.status === -2 ? '已驳回' : '已发起'">
+                    <a-card>
+                        <template #title>
+                            <div class="text-center">
+                                <span class="text-lg font-semibold">{{ flow.flow_name }}</span>
+                                <a-tag v-if="flow.Template" color="blue" class="ml-2">
+                                    {{ flow.Template.template_name }}
+                                </a-tag>
+                            </div>
+                        </template>
+
+                        <a-alert v-if="canEdit" message="该流程已被驳回，修改后重新提交即可" type="warning" show-icon class="mb-3" />
+
+                        <Form :fields="fillFields" @submit="onSubmit" :entryDatas="entryDatas"
+                            ref="huluFormRef">
+                            <template v-if="!canEdit">
+                                <div class="text-center mt-4">
+                                    <a-button @click="goBack">返回</a-button>
                                 </div>
-                                </p>
-
-                                <a-alert v-if="canEdit" message="该流程已被驳回，修改后重新提交即可" type="warning" show-icon class="mb-3" />
-
-                                <Form :fields="fillFields" @submit="onSubmit" :entryDatas="entryDatas"
-                                    ref="huluFormRef">
-                                    <template v-if="!canEdit">
-                                        <div></div>
-                                    </template>
-                                </Form>
-                            </a-card>
-                        </div>
-                    </a-watermark>
-
-                </div>
-            </a-col>
-            <a-col :span="8"></a-col>
-
-        </a-row>
+                            </template>
+                        </Form>
+                    </a-card>
+                </a-watermark>
+            </div>
+        </div>
     </div>
-
 </template>
 
 <script setup lang='ts'>
 const { loadFlowEntryConfig, storeEntry, updateEntry, getEntryData } = useEntry();
 const route = useRoute();
+const router = useRouter()
+const goBack = () => router.back()
 const flow_id = route.params.flow_id
 const entry_id = route.params.entry_id;
 const fillFields = ref([]);

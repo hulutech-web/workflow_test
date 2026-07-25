@@ -32,7 +32,8 @@ func (r *ProcController) Pass(ctx http.Context) http.Response {
 	facades.Auth(ctx).User(&user)
 	process_id := ctx.Request().InputInt("process_id")
 	content := ctx.Request().Input("content")
-	err := r.workflow.Pass(process_id, user, content)
+	formData := ctx.Request().All()
+	err := r.workflow.Pass(process_id, user, content, formData)
 	if err != nil {
 		return httpfacades.NewResult(ctx).Error(500, "审批失败", err.Error())
 	}

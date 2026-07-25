@@ -1,28 +1,27 @@
 <template>
-    <div>
-        <a-row>
-            <a-col :span="8"></a-col>
-            <a-col :span="8">
-                <div class="p-3">
-                    <a-card>
-                        <p class="text-xl font-bold mb-3 text-center">
-                            <span>流程：{{ flow.flow_name }}</span>
-                        <div>
+    <div class="p-4">
+        <div class="mb-4">
+            <a-button type="link" @click="goBack">
+                <ArrowLeftOutlined /> 返回
+            </a-button>
+        </div>
+        <div class="flex justify-center">
+            <div class="w-full" style="max-width: 700px">
+                <a-card>
+                    <template #title>
+                        <div class="text-center">
+                            <span class="text-lg font-semibold">流程：{{ flow.flow_name }}</span>
                             <a-tag v-if="flow.Template" color="blue" class="ml-2">
                                 {{ flow.Template.template_name }}
                             </a-tag>
                         </div>
-                        </p>
+                    </template>
 
-                        <Form :fields="fillFields" @submit="onSubmit" ref="huluFormRef"></Form>
-                    </a-card>
-                </div>
-            </a-col>
-            <a-col :span="8"></a-col>
-
-        </a-row>
+                    <Form :fields="fillFields" @submit="onSubmit" ref="huluFormRef"></Form>
+                </a-card>
+            </div>
+        </div>
     </div>
-
 </template>
 
 <script setup lang='ts'>
@@ -31,6 +30,9 @@ const route = useRoute();
 const id = route.params.id;
 const fillFields = ref([]);
 const flow = ref({})
+const router = useRouter()
+const goBack = () => router.back()
+
 const init = async () => {
     if (id) {
         const { data } = await loadFlowEntryConfig(id);

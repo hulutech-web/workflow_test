@@ -1,7 +1,10 @@
 package controllers
 
 import (
+	"fmt"
+
 	"goravel/packages/goravel-workflow/models"
+	workflow "goravel/packages/goravel-workflow/services/workflow"
 
 	"github.com/goravel/framework/contracts/http"
 	"github.com/goravel/framework/facades"
@@ -121,6 +124,46 @@ func (r *FlowController) Publish(ctx http.Context) http.Response {
 	}
 	if fkCount1 < 2 {
 		return httpfacades.NewResult(ctx).Error(http.StatusInternalServerError, "发布失败，至少需要两个步骤", nil)
+	}
+
+	// Validate condition flowlink expressions for logical coherence
+	{
+		type condRow struct {
+			ID         int
+			ProcessID  int
+			Expression string
+			Sort       int
+		}
+		var condFlowlinks []condRow
+		facades.Orm().Query().Table("flowlinks").
+			Join("left join processes on flowlinks.process_id=processes.id").
+			Select("flowlinks.id, flowlinks.process_id, flowlinks.expression, flowlinks.sort").
+			Where("flowlinks.flow_id=?", flow_id).
+			Where("flowlinks.type=?", "Condition").
+			Find(&condFlowlinks)
+
+		type flInput = workflow.ConditionFlowlinkEntry
+		byProcess := make(map[int][]flInput)
+		for _, row := range condFlowlinks {
+			byProcess[row.ProcessID] = append(byProcess[row.ProcessID], flInput{
+				ID:         row.ID,
+				Expression: row.Expression,
+				Sort:       row.Sort,
+			})
+		}
+
+		for processID, links := range byProcess {
+			if err := workflow.ValidateConditionFlowlinks(links); err != nil {
+				var process models.Process
+				facades.Orm().Query().Model(&models.Process{}).Where("id=?", processID).Find(&process)
+				stepName := process.ProcessName
+				if stepName == "" {
+					stepName = fmt.Sprintf("步骤ID=%d", processID)
+				}
+				return httpfacades.NewResult(ctx).Error(http.StatusInternalServerError,
+					fmt.Sprintf("步骤\"%s\"的条件分支验证失败：%s", stepName, err.Error()), nil)
+			}
+		}
 	}
 
 	fkCount2, err := facades.Orm().Query().Table("flowlinks").
