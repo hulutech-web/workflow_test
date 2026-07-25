@@ -66,6 +66,13 @@ export default () => {
     });
   };
 
+  const getRejectableProcesses = async (entry_id) => {
+    return await http.request({
+      url: `proc/${entry_id}/rejectable`,
+      method: "GET",
+    });
+  };
+
   return {
     setPass,
     setUnPass,
@@ -74,6 +81,7 @@ export default () => {
     transferProc,
     addComment,
     getComments,
+    getRejectableProcesses,
     indexProcs
   };
 };

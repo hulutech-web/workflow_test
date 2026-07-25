@@ -46,8 +46,17 @@ func (r *ProcController) UnPass(ctx http.Context) http.Response {
 	facades.Orm().Query().Model(&models.Emp{}).Where("id=?", user.ID).With("Dept").Find(&withUser)
 	proc_id := ctx.Request().InputInt("proc_id")
 	content := ctx.Request().Input("content")
+	target_process_id := ctx.Request().InputInt("target_process_id")
 
-	r.workflow.UnPass(proc_id, withUser, content)
+	var err error
+	if target_process_id > 0 {
+		err = r.workflow.UnPassTo(proc_id, withUser, content, target_process_id)
+	} else {
+		err = r.workflow.UnPass(proc_id, withUser, content)
+	}
+	if err != nil {
+		return httpfacades.NewResult(ctx).Error(500, "驳回失败", err.Error())
+	}
 	return httpfacades.NewResult(ctx).Success("驳回成功", nil)
 }
 
@@ -120,4 +129,68 @@ func (r *ProcController) GetComments(ctx http.Context) http.Response {
 		return httpfacades.NewResult(ctx).Error(500, "获取评论失败", err.Error())
 	}
 	return httpfacades.NewResult(ctx).Success("", comments)
+}
+
+// RejectableProcesses 获取可驳回的节点列表
+func (r *ProcController) RejectableProcesses(ctx http.Context) http.Response {
+	entry_id := ctx.Request().RouteInt("entry_id")
+	var entry models.Entry
+	facades.Orm().Query().Model(&models.Entry{}).Where("id=?", entry_id).Find(&entry)
+	if entry.ID == 0 {
+		return httpfacades.NewResult(ctx).Error(500, "流程实例不存在", nil)
+	}
+	currentProcessID := int(entry.ProcessID)
+
+	// Query all procs for this entry/circle, dedup in Go
+	var allProcs []models.Proc
+	facades.Orm().Query().Model(&models.Proc{}).
+		Where("entry_id=?", entry_id).
+		Where("circle=?", entry.Circle).
+		Find(&allProcs)
+
+	seen := make(map[int]bool)
+	var pastProcessIDs []int
+	for _, p := range allProcs {
+		if seen[p.ProcessID] {
+			continue
+		}
+		if p.ProcessID == currentProcessID {
+			continue
+		}
+		if p.Status == models.ProcStatusPending || p.Status == models.ProcStatusSkipped || p.Status == models.ProcStatusRejected {
+			continue
+		}
+		seen[p.ProcessID] = true
+		pastProcessIDs = append(pastProcessIDs, p.ProcessID)
+	}
+
+	// Ensure the flow's starting process (position=0) is always included
+	if !seen[int(currentProcessID)] {
+		var startProcess models.Process
+		facades.Orm().Query().Model(&models.Process{}).
+			Where("flow_id=?", entry.FlowID).
+			Where("position=?", 0).
+			Find(&startProcess)
+		if startProcess.ID > 0 && !seen[int(startProcess.ID)] && int(startProcess.ID) != currentProcessID {
+			pastProcessIDs = append([]int{int(startProcess.ID)}, pastProcessIDs...)
+		}
+	}
+
+	var processes []models.Process
+	facades.Orm().Query().Model(&models.Process{}).
+		Where("flow_id=?", entry.FlowID).
+		Where("id IN ?", pastProcessIDs).
+		Where("position != ?", 9).
+		Order("position ASC").
+		Find(&processes)
+
+	var result []map[string]interface{}
+	for _, p := range processes {
+		result = append(result, map[string]interface{}{
+			"id":           p.ID,
+			"process_name": p.ProcessName,
+			"position":     p.Position,
+		})
+	}
+	return httpfacades.NewResult(ctx).Success("", result)
 }

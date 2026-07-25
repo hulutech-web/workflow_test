@@ -14,13 +14,6 @@
                                     </a-tag>
                                 </p>
 
-                                <a-form-item label="标题" :rules="[{ required: true, message: '输入标题' }]"
-                                    style="max-width: 600px" v-bind="{
-                                        labelCol: { span: 8 },
-                                        wrapperCol: { span: 16 },
-                                    }">
-                                    <a-input placeholder="请输入标题" v-model:value="title" disabled />
-                                </a-form-item>
                                 <Form :fields="fillFields" @submit="onSubmit" :entryDatas="entryDatas"
                                     ref="huluFormRef">
                                     <div>
@@ -34,6 +27,7 @@
                                                 <a-button type="primary" @click="unpass">
                                                     驳回
                                                 </a-button>
+                                                <a-button type="primary" danger @click="showUnpassTo">驳回至节点</a-button>
                                                 <a-button @click="showAddSign">加签</a-button>
                                                 <a-button @click="showTransfer">转交</a-button>
                                                 <a-button @click="showComment">评论</a-button>
@@ -97,6 +91,22 @@
                 </a-form-item>
             </a-form>
         </a-modal>
+
+        <!-- UnpassTo Modal -->
+        <a-modal v-model:open="unpassToOpen" title="驳回至指定节点" centered @ok="handleUnpassTo">
+            <a-form layout="vertical">
+                <a-form-item label="目标节点">
+                    <a-select v-model:value="targetProcessId" placeholder="请选择要驳回到的节点" style="width:100%">
+                        <a-select-option v-for="p in rejectableProcesses" :key="p.id" :value="p.id">
+                            {{ p.process_name }} (位置: {{ p.position }})
+                        </a-select-option>
+                    </a-select>
+                </a-form-item>
+                <a-form-item label="驳回理由">
+                    <a-textarea v-model:value="unpassToContent" :rows="4" placeholder="请输入驳回理由" />
+                </a-form-item>
+            </a-form>
+        </a-modal>
     </div>
 </template>
 
@@ -105,7 +115,7 @@ import { message } from 'ant-design-vue';
 import EmpSearch from '@/components/empsearch/index.vue';
 
 const { loadFlowEntryConfig, getEntryData } = useEntry();
-const { setPass, setUnPass, addSign, transferProc, addComment, getComments, indexProcs } = useProc();
+const { setPass, setUnPass, addSign, transferProc, addComment, getComments, getRejectableProcesses, indexProcs } = useProc();
 const route = useRoute();
 
 const flow_id = route.params.flow_id
@@ -116,7 +126,6 @@ const proc_id = query.proc_id as string
 
 const fillFields = ref([]);
 const flow = ref({})
-const title = ref("")
 const entry = ref({})
 const comments = ref<any[]>([])
 
@@ -137,7 +146,6 @@ const loadEntryDatas = async () => {
     const { data } = await getEntryData(entry_id)
     entryDatas.value = data.entrydata
     entry.value = data.entry
-    title.value = data.entry.title || ''
 }
 
 const loadComments = async () => {
@@ -247,6 +255,42 @@ const handleComment = async () => {
         commentContent.value = ''
         commentOpen.value = false
         await loadComments()
+    } catch (e) {
+        // error handled by interceptor
+    }
+}
+
+// UnpassTo
+const unpassToOpen = ref(false)
+const targetProcessId = ref(undefined)
+const unpassToContent = ref('')
+const rejectableProcesses = ref<any[]>([])
+const showUnpassTo = async () => {
+    try {
+        const { data } = await getRejectableProcesses(entry_id)
+        rejectableProcesses.value = data || []
+        targetProcessId.value = undefined
+        unpassToContent.value = ''
+        unpassToOpen.value = true
+    } catch (e) {
+        // error handled by interceptor
+    }
+}
+const handleUnpassTo = async () => {
+    if (!targetProcessId.value) {
+        message.warning('请选择目标节点')
+        return
+    }
+    try {
+        await setUnPass({
+            proc_id: proc_id,
+            entry_id: entry_id,
+            content: unpassToContent.value || content.value,
+            target_process_id: targetProcessId.value,
+        })
+        message.success('已驳回至指定节点')
+        unpassToOpen.value = false
+        history.back()
     } catch (e) {
         // error handled by interceptor
     }

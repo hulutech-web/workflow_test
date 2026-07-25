@@ -64,7 +64,7 @@ func (r *TimeoutCheckCommand) Handle(ctx console.Context) error {
 
 			var entry models.Entry
 			if err := query.Model(&models.Entry{}).Where("id=?", proc.EntryID).First(&entry); err == nil {
-				entry.Status = models.ProcStatusRejected
+				entry.Status = models.EntryStatusRejected
 				query.Model(&models.Entry{}).Where("id=?", entry.ID).Save(&entry)
 				fmt.Printf("Timed out entry %d at process %d (%ds/%ds)\n", entry.ID, proc.ProcessID, elapsedSeconds, process.LimitTime)
 			}

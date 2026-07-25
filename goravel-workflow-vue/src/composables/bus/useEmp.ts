@@ -171,35 +171,30 @@ export default () => {
       filter: true, // 启用筛选代理，当点击筛选时会自动触发 query 行为
       form: true, // 启用表单代理，当点击表单提交按钮时会自动触发 reload 行为
       props: {
-        // 对应响应结果 Promise<{ result: [], page: { total: 100 } }>
-        result: "data.data", // 配置响应结果列表字段
-        total: "data.total", // 配置响应结果总页数字段
+        result: "data.data",
+        total: "data.total",
       },
       // 只接收Promise，具体实现自由发挥
       ajax: {
         // 当点击工具栏查询按钮或者手动提交指令 query或reload 时会被触发
         query: ({ page, sorts, filters, form }) => {
-          return new Promise((resolve, reject) => {
-            const queryParams: any = Object.assign({}, form);
-            // 处理排序条件
-            const firstSort = sorts[0];
-            if (firstSort) {
-              queryParams.sort = firstSort.field;
-              queryParams.order = firstSort.order;
-            }
-            // 处理筛选条件
-            filters.forEach(({ field, values }) => {
-              queryParams[field] = values.join(",");
-            });
+          const queryParams: any = Object.assign({}, form);
+          // 处理排序条件
+          const firstSort = sorts[0];
+          if (firstSort) {
+            queryParams.sort = firstSort.field;
+            queryParams.order = firstSort.order;
+          }
+          // 处理筛选条件
+          filters.forEach(({ field, values }) => {
+            queryParams[field] = values.join(",");
+          });
 
-            const data = http.request({
-              url: `emp?pageSize=${page.pageSize}&currentPage=${
+          return http.request({
+            url: `emp?pageSize=${page.pageSize}&currentPage=${
                 page.currentPage
-              }&${XEUtils.serialize(queryParams)}`,
-              method: "GET",
-            });
-            console.log(data)
-            resolve(data);
+            }&${XEUtils.serialize(queryParams)}`,
+            method: "GET",
           });
         },
       },

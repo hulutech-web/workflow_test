@@ -19,6 +19,13 @@ export default () => {
       data: data,
     });
   };
+  const updateEntry = async (id, data) => {
+    return await http.request({
+      url: `entry/${id}`,
+      method: "PUT",
+      data: data,
+    });
+  };
   const showEntry = async (id) => {
     return await http.request({
       url: `entry/${id}`,
@@ -52,6 +59,7 @@ export default () => {
     loadFlowEntryConfig,
     showEntry,
     storeEntry,
+    updateEntry,
     getEntryData,
     resendEntry,
     revokeEntry

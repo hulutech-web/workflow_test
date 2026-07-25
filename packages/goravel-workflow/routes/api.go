@@ -56,6 +56,7 @@ func Api(app foundation.Application) {
 		router.Get("flow/{id}/entry", entryCtrl.Create)
 		router.Post("entry", entryCtrl.Store)
 		router.Get("entry/{id}", entryCtrl.Show)
+		router.Put("entry/{id}", entryCtrl.Update)
 		router.Get("entry/{id}/entrydata", entryCtrl.EntryData)
 		//流程重发
 		router.Post("entry/resend", entryCtrl.Resend)
@@ -87,6 +88,7 @@ func Api(app foundation.Application) {
 
 		//	审批流转
 		procCtrl := controllers.NewProcController()
+		router.Get("proc/{entry_id}/rejectable", procCtrl.RejectableProcesses)
 		router.Get("proc/{entry_id}", procCtrl.Index)
 		//同意
 		router.Post("pass", procCtrl.Pass)

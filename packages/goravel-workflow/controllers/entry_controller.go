@@ -23,6 +23,7 @@ type EntryController struct {
 
 func NewEntryController() *EntryController {
 	return &EntryController{
+		workflow:         workflow.NewBaseWorkflow(),
 		dynamicValidator: common.NewDynamicValidator(),
 	}
 }
@@ -83,8 +84,15 @@ func (r *EntryController) Store(ctx http.Context) http.Response {
 	}
 	var result []models.Flowlink
 	facades.Orm().Query().Model(&models.Flowlink{}).
-		Where("flow_id=? AND type!=? AND process_id=?", flow_id, "Condition", firstProcessId).
+		Where("flow_id=? AND process_id=?", flow_id, firstProcessId).
+		Where("(type!=? OR type IS NULL)", "Condition").
 		Order("sort ASC").Find(&result)
+	if len(result) == 0 {
+		// 如果第一步只有 Condition 类型的连线，尝试找所有从第一步出发的 flowlink
+		facades.Orm().Query().Model(&models.Flowlink{}).
+			Where("flow_id=? AND process_id=?", flow_id, firstProcessId).
+			Order("sort ASC").Find(&result)
+	}
 	if len(result) == 0 {
 		return httpfacades.NewResult(ctx).Error(http.StatusInternalServerError, "未找到第一步流程配置", "")
 	}
@@ -113,11 +121,12 @@ func (r *EntryController) Store(ctx http.Context) http.Response {
 	query := facades.Orm().Query()
 	var entry models.Entry
 
-	entry.Title = ctx.Request().Input("title")
+	all := ctx.Request().All()
+	entry.Title = cast.ToString(all["title"])
 	entry.FlowID = cast.ToUint(flow_id)
 	entry.EmpID = user.ID
 	entry.Circle = 1
-	entry.Status = 0
+	entry.Status = models.EntryStatusPending
 	err = query.Model(&models.Entry{}).Create(&entry)
 
 	var withEntry models.Entry
@@ -127,8 +136,8 @@ func (r *EntryController) Store(ctx http.Context) http.Response {
 	//第一步看是否指定审核人
 
 	//向entrydata中插入数据 — must be done before SetFirstProcessAuditor for condition evaluation
-	for key, val := range ctx.Request().All() {
-		if key == "title" || key == "flow_id" {
+	for key, val := range all {
+		if key == "flow_id" || key == "id" || key == "entry_id" {
 			continue
 		} else {
 			//判断val的类型，如果是[]string,则转换为解析为字符串
@@ -167,7 +176,102 @@ func (r *EntryController) Store(ctx http.Context) http.Response {
 }
 
 func (r *EntryController) Update(ctx http.Context) http.Response {
-	return nil
+	id := ctx.Request().RouteInt("id")
+	query := facades.Orm().Query()
+
+	var entry models.Entry
+	query.Model(&models.Entry{}).Where("id=?", id).First(&entry)
+	if entry.ID == 0 {
+		return httpfacades.NewResult(ctx).Error(http.StatusBadRequest, "流程不存在", "")
+	}
+	if entry.Status != models.EntryStatusRejected && entry.Status != models.EntryStatusRevoked {
+		return httpfacades.NewResult(ctx).Error(http.StatusBadRequest, "当前状态不允许修改", "")
+	}
+
+	all := ctx.Request().All()
+	if title := cast.ToString(all["title"]); title != "" {
+		entry.Title = title
+		query.Model(&models.Entry{}).Where("id=?", entry.ID).Save(&entry)
+	}
+
+	// Update entrydatas
+	for key, val := range all {
+		if key == "flow_id" || key == "id" || key == "entry_id" {
+			continue
+		}
+		fieldValue := ""
+		if reflect.TypeOf(val).Kind() == reflect.Slice {
+			var sliceStr []string
+			for _, v := range val.([]interface{}) {
+				sliceStr = append(sliceStr, cast.ToString(v))
+			}
+			fieldValue = strings.Join(sliceStr, ",")
+		} else {
+			fieldValue = cast.ToString(val)
+		}
+		var existing models.EntryData
+		query.Model(&models.EntryData{}).
+			Where("entry_id=? AND field_name=?", id, key).
+			First(&existing)
+		if existing.ID > 0 {
+			query.Model(&models.EntryData{}).Where("id=?", existing.ID).Update("field_value", fieldValue)
+		} else {
+			entryData := models.EntryData{
+				FlowID:     cast.ToInt(entry.FlowID),
+				EntryID:    cast.ToInt(id),
+				FieldName:  key,
+				FieldValue: fieldValue,
+			}
+			query.Model(&models.EntryData{}).Create(&entryData)
+		}
+	}
+
+	// Resend
+	var entryResend models.Entry
+	query.Model(&models.Entry{}).Where("id=?", id).Where("status IN (?, ?)", models.EntryStatusRejected, models.EntryStatusRevoked).
+		With("Flow").With("Emp.Dept").With("Procs").With("EnterProcess").Find(&entryResend)
+	if entryResend.ID == 0 {
+		return httpfacades.NewResult(ctx).Error(http.StatusBadRequest, "当前状态不允许重发", "")
+	}
+
+	flow := models.Flow{}
+	query.Model(&models.Flow{}).Where("id=?", entryResend.FlowID).Where("is_publish=?", true).Find(&flow)
+	if flow.ID == 0 {
+		return httpfacades.NewResult(ctx).Error(http.StatusInternalServerError, "流程未发布", "请检查")
+	}
+	var flowlink models.Flowlink
+	var firstProcessId uint
+	query.Model(&models.Process{}).Where("flow_id=? AND position=?", entryResend.FlowID, 0).Pluck("id", &firstProcessId)
+	if firstProcessId == 0 {
+		return httpfacades.NewResult(ctx).Error(http.StatusInternalServerError, "未找到第一步流程配置", "")
+	}
+	query.Model(&models.Flowlink{}).
+		Where("flow_id=? AND type!=? AND process_id=?", entryResend.FlowID, "Condition", firstProcessId).
+		Order("sort ASC").First(&flowlink)
+	if flowlink.ID == 0 {
+		query.Model(&models.Flowlink{}).
+			Where("flow_id=? AND process_id=?", entryResend.FlowID, firstProcessId).
+			Order("sort ASC").First(&flowlink)
+	}
+	if flowlink.ID == 0 {
+		return httpfacades.NewResult(ctx).Error(http.StatusInternalServerError, "节点关系错误", "请检查")
+	}
+	var withFlowlink models.Flowlink
+	query.Model(&models.Flowlink{}).Where("id=?", flowlink.ID).With("Process").With("NextProcess").Find(&withFlowlink)
+
+	var map_entry = make(map[string]interface{})
+	map_entry["circle"] = entryResend.Circle + 1
+	map_entry["child"] = 0
+	map_entry["status"] = models.EntryStatusPending
+	query.Model(&models.Entry{}).Where("id=?", entryResend.ID).Update(map_entry)
+	newEntry := models.Entry{}
+	query.Model(&models.Entry{}).Where("id=?", entryResend.ID).With("Flow").With("Emp.Dept").With("Procs").With("EnterProcess").Find(&newEntry)
+
+	err := r.workflow.SetFirstProcessAuditor(newEntry, withFlowlink)
+	if err != nil {
+		return httpfacades.NewResult(ctx).Error(http.StatusInternalServerError, err.Error(), "")
+	}
+	return httpfacades.NewResult(ctx).Success("修改并重发成功", entryResend)
 }
 
 func (r *EntryController) Destroy(ctx http.Context) http.Response {
@@ -179,7 +283,7 @@ func (r *EntryController) Resend(ctx http.Context) http.Response {
 	entry_id := ctx.Request().Input("entry_id")
 	entry := models.Entry{}
 	query := facades.Orm().Query()
-	query.Model(&models.Entry{}).Where("id=?", entry_id).Where("status=?", -1).With("Flow").With("Emp.Dept").With("Procs").With("EnterProcess").
+	query.Model(&models.Entry{}).Where("id=?", entry_id).Where("status=?", models.EntryStatusRejected).With("Flow").With("Emp.Dept").With("Procs").With("EnterProcess").
 		Find(&entry)
 
 	flow := models.Flow{}
@@ -207,7 +311,7 @@ func (r *EntryController) Resend(ctx http.Context) http.Response {
 	var map_entry = make(map[string]interface{})
 	map_entry["circle"] = entry.Circle + 1
 	map_entry["child"] = 0
-	map_entry["status"] = 0
+	map_entry["status"] = models.EntryStatusPending
 	query.Model(&models.Entry{}).Where("id=?", entry.ID).Update(map_entry)
 	newEntry := models.Entry{}
 	query.Model(&models.Entry{}).Where("id=?", entry.ID).With("Flow").With("Emp.Dept").With("Procs").With("EnterProcess").Find(&newEntry)

@@ -9,10 +9,10 @@
           </a-form-item>
           <a-form-item label="步骤类型">
             <a-radio-group v-model:value="submitState.process_position" :value="formState.process.position">
-              <a-radio :value="1">正常步骤</a-radio>
-              <a-radio v-if="formState.can_child" :value="2">转入子流程</a-radio>
-              <!-- <a-radio  :value="2">转入子流程</a-radio> -->
               <a-radio :value="0">第一步</a-radio>
+              <a-radio :value="1">正常步骤</a-radio>
+              <a-radio :value="9">结束</a-radio>
+              <a-radio v-if="formState.can_child" :value="2">转入子流程</a-radio>
             </a-radio-group>
           </a-form-item>
           <a-divider></a-divider>

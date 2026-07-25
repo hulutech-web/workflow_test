@@ -4,6 +4,14 @@ import (
 	"github.com/goravel/framework/database/orm"
 )
 
+// Entry status constants
+const (
+	EntryStatusPending   = 0   // 进行中
+	EntryStatusCompleted = 9   // 已完成
+	EntryStatusRejected  = -1  // 已驳回
+	EntryStatusRevoked   = -2  // 已撤回
+)
+
 type Entry struct {
 	orm.Model
 	Title          string      `gorm:"column:title;not null;default:''" json:"title" form:"title"`

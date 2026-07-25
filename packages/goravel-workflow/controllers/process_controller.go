@@ -94,6 +94,7 @@ func (r *ProcessController) Store(ctx http.Context) http.Response {
 	} else {
 		//jsMap的list属性为二维数组
 		var jsMapTemp common.Plumb
+		jsMapTemp.List = map[string]common.Node{}
 		//将flow中的Jsplumb转换为jsMapTemp
 		json.Unmarshal([]byte(flow.Jsplumb), &jsMapTemp)
 		node := common.Node{
@@ -145,11 +146,11 @@ func (r *ProcessController) Update(ctx http.Context) http.Response {
 	}
 	if processRequest.ProcessPosition == 0 {
 		_, err := tx.Model(&models.Process{}).Where("flow_id=?", process.FlowID).Where("position", 0).Update("position", 1)
-		tx.Model(&models.Process{}).Where("flow_id=?", process.FlowID).Update("position", 0)
 		if err != nil {
 			tx.Rollback()
 			return httpfacades.NewResult(ctx).Error(http.StatusInternalServerError, "数据错误", nil)
 		}
+		tx.Model(&models.Process{}).Where("id=?", id).Update("position", 0)
 	}
 	process.ProcessName = processRequest.ProcessName
 	process.StyleColor = processRequest.StyleColor
@@ -266,7 +267,7 @@ func (r *ProcessController) Update(ctx http.Context) http.Response {
 	}
 
 	//权限处理
-	if processRequest.AutoPerson != "0" {
+	if processRequest.AutoPerson != "0" && processRequest.AutoPerson != "" {
 
 		var fk models.Flowlink
 		tx.Model(&fk).Where("flow_id=?", flow.ID).Where("process_id=?", id).Where("type=?", "Sys").Find(&fk)
@@ -340,14 +341,14 @@ func (r *ProcessController) Update(ctx http.Context) http.Response {
 				}
 				auditor = strings.TrimSuffix(auditor, ",")
 				fkemp.Auditor = auditor
-				tx.Model(&models.Flowlink{}).Where("id=?", fkemp.ID).Update("auditor", fkemp.Auditor)
+				tx.Model(&models.Flowlink{}).Where("id=?", fkemp.ID).Update(map[string]interface{}{"auditor": fkemp.Auditor, "concurrency_type": processRequest.ConcurrencyType})
 			} else {
 				auditor := ""
 				for _, emp := range processRequest.RangeEmpIds {
 					auditor += cast.ToString(emp) + ","
 				}
 				auditor = strings.TrimSuffix(auditor, ",")
-				tx.Model(&models.Flowlink{}).Create(&models.Flowlink{FlowID: flow.ID, Type: "Emp", ProcessID: cast.ToUint(id), Auditor: auditor, NextProcessID: defaultNextID, Sort: 100})
+				tx.Model(&models.Flowlink{}).Create(&models.Flowlink{FlowID: flow.ID, Type: "Emp", ProcessID: cast.ToUint(id), Auditor: auditor, NextProcessID: defaultNextID, Sort: 100, ConcurrencyType: processRequest.ConcurrencyType})
 			}
 		} else {
 			//	删除
@@ -490,25 +491,43 @@ func (r *ProcessController) Attribute(ctx http.Context) http.Response {
 		can_child = true
 	}
 
-	// Get concurrency_type and approver_rule from Sys flowlink
+	// Get concurrency_type and approver_rule from Sys/Emp/Dept flowlink
 	concurrencyType := 0
 	approverRule := ""
 	if flowlink.ID != 0 {
 		concurrencyType = flowlink.ConcurrencyType
 		approverRule = flowlink.ApproverRule
 	}
+	if concurrencyType == 0 {
+		empFlowlink := models.Flowlink{}
+		tx.Model(&models.Flowlink{}).Where("process_id = ?", process.ID).Where("flow_id=?", process.FlowID).
+			Where("type=?", "Emp").Find(&empFlowlink)
+		if empFlowlink.ID != 0 {
+			concurrencyType = empFlowlink.ConcurrencyType
+			approverRule = empFlowlink.ApproverRule
+		}
+	}
+	if concurrencyType == 0 {
+		deptFlowlink := models.Flowlink{}
+		tx.Model(&models.Flowlink{}).Where("process_id = ?", process.ID).Where("flow_id=?", process.FlowID).
+			Where("type=?", "Dept").Find(&deptFlowlink)
+		if deptFlowlink.ID != 0 {
+			concurrencyType = deptFlowlink.ConcurrencyType
+			approverRule = deptFlowlink.ApproverRule
+		}
+	}
 
 	return httpfacades.NewResult(ctx).Success("", http.Json{
-		"process":         process,
-		"next_process":    next_process,
-		"beixuan_process": beixuan_process,
-		"fields":          fields,
-		"select_emps":     select_emps,
-		"sys":             sys,
-		"select_depts":    select_depts,
-		"flows":           flows,
-		"processes":       processes,
-		"can_child":       can_child,
+		"process":          process,
+		"next_process":     next_process,
+		"beixuan_process":  beixuan_process,
+		"fields":           fields,
+		"select_emps":      select_emps,
+		"sys":              sys,
+		"select_depts":     select_depts,
+		"flows":            flows,
+		"processes":        processes,
+		"can_child":        can_child,
 		"concurrency_type": concurrencyType,
 		"approver_rule":    approverRule,
 	})

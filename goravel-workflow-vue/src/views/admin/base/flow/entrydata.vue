@@ -4,7 +4,7 @@
             <a-col :span="8"></a-col>
             <a-col :span="8">
                 <div class="p-3">
-                    <a-watermark content="已发起">
+                    <a-watermark :content="entry.status === -1 || entry.status === -2 ? '已驳回' : '已发起'">
                         <div>
                             <a-card>
                                 <p class="text-2xl font-bold mb-3 text-center">
@@ -16,16 +16,13 @@
                                 </div>
                                 </p>
 
-                                <a-form-item label="标题" :rules="[{ required: true, message: '输入标题' }]"
-                                    style="max-width: 600px" v-bind="{
-                                        labelCol: { span: 8 },
-                                        wrapperCol: { span: 16 },
-                                    }">
-                                    <a-input placeholder="请输入标题" v-model:value="title" />
-                                </a-form-item>
+                                <a-alert v-if="canEdit" message="该流程已被驳回，修改后重新提交即可" type="warning" show-icon class="mb-3" />
+
                                 <Form :fields="fillFields" @submit="onSubmit" :entryDatas="entryDatas"
                                     ref="huluFormRef">
-                                    <div></div>
+                                    <template v-if="!canEdit">
+                                        <div></div>
+                                    </template>
                                 </Form>
                             </a-card>
                         </div>
@@ -41,16 +38,15 @@
 </template>
 
 <script setup lang='ts'>
-import { message } from 'ant-design-vue';
-
-const { loadFlowEntryConfig, storeEntry, getEntryData } = useEntry();
+const { loadFlowEntryConfig, storeEntry, updateEntry, getEntryData } = useEntry();
 const route = useRoute();
 const flow_id = route.params.flow_id
 const entry_id = route.params.entry_id;
 const fillFields = ref([]);
 const flow = ref({})
-const title = ref("")
 const entry = ref({})
+const canEdit = ref(false)
+
 const init = async () => {
     if (flow_id) {
         const { data } = await loadFlowEntryConfig(flow_id);
@@ -64,26 +60,29 @@ const init = async () => {
 const entryDatas = ref([])
 const loadEntryDatas = async () => {
     const { data } = await getEntryData(entry_id)
-   
     entryDatas.value = data.entrydata
     entry.value = data.entry
-    title.value = data.entry.title
+    canEdit.value = data.entry.status === -1 || data.entry.status === -2
 }
 
-const fillDefaultValue = () => {
-
-}
 const huluFormRef = ref()
 const onSubmit = async (values) => {
-    if (title.value == '') {
-        return message.error("请输入标题")
-    }
-    Object.assign(values, { flow_id: +id, title: title.value })
-    try {
-        huluFormRef.value.clearValidate()
-        await storeEntry(values)
-    } catch (error) {
-        huluFormRef.value.validate()
+    if (canEdit.value) {
+        try {
+            huluFormRef.value.clearValidate()
+            values.title = entry.value.title
+            await updateEntry(entry_id, values)
+        } catch (error) {
+            huluFormRef.value.validate()
+        }
+    } else {
+        values.flow_id = +flow_id
+        try {
+            huluFormRef.value.clearValidate()
+            await storeEntry(values)
+        } catch (error) {
+            huluFormRef.value.validate()
+        }
     }
 }
 init();

@@ -28,6 +28,7 @@
                         <a-button type="link" @click="viewEntry(row)">查看</a-button>
                         <a-button type="link" @click="viewEntryData(row)">表单数据</a-button>
                         <a-button type="link" @click="viewProcs(row)">进程明细</a-button>
+                        <a-button v-if="row.status === -1 || row.status === -2" type="link" @click="editEntryData(row)" danger>编辑重发</a-button>
                         <a-button v-if="row.status === 0 || row.status === -1" type="link" @click="resendEntryFn(row)"
                             danger>重发</a-button>
                         <a-button v-if="row.status === 0" type="link" @click="revokeEntryFn(row)" danger>撤回</a-button>
@@ -65,7 +66,7 @@
 </template>
 
 <script setup lang="ts">
-import { message } from 'ant-design-vue'
+import { message, Modal } from 'ant-design-vue'
 
 const { showEntry, resendEntry, revokeEntry } = useEntry()
 const { indexProcs } = useProc()
@@ -149,14 +150,27 @@ const viewEntryData = (row: any) => {
     router.push({ path: `/admin/base/flow/${row.flow_id}/entry/${row.id}` })
 }
 
+const editEntryData = (row: any) => {
+    router.push({ path: `/admin/base/flow/${row.flow_id}/entry/${row.id}` })
+}
+
 const revokeEntryFn = async (row: any) => {
-    try {
-        await revokeEntry(row.id)
-        message.success('撤回成功')
-        handleFilterChange()
-    } catch (e) {
-        // handled by interceptor
-    }
+    Modal.confirm({
+        title: '确认撤回',
+        content: `确定要撤回「${row.title}」吗？此操作不可撤销。`,
+        okText: '确认撤回',
+        cancelText: '取消',
+        okType: 'danger',
+        onOk: async () => {
+            try {
+                await revokeEntry(row.id)
+                message.success('撤回成功')
+                handleFilterChange()
+            } catch (e) {
+                // handled by interceptor
+            }
+        }
+    })
 }
 
 const resendEntryFn = async (row: any) => {

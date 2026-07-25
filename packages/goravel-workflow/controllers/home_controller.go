@@ -35,7 +35,7 @@ func (r *HomeController) Index(ctx http.Context) http.Response {
 	procs := []models.Proc{}
 	query.Model(&models.Proc{}).With("Emp").With("Entry", func(query orm.Query) orm.Query {
 		return query.With("Emp")
-	}).Where("emp_id=?", user.ID).Where("status=?", 0).
+	}).Where("emp_id=?", user.ID).Where("status=?", models.ProcStatusPending).
 		Order("is_read asc").Order("status asc").Order("id desc").Find(&procs)
 
 	//工作流
@@ -45,7 +45,7 @@ func (r *HomeController) Index(ctx http.Context) http.Response {
 	handle_procs := []models.Proc{}
 	facades.Orm().Query().Model(&models.Proc{}).With("Emp").With("Entry").
 		Where("emp_id=?", emp.ID).
-		Where("status!=?", 0).
+		Where("status!=?", models.ProcStatusPending).
 		Order("id desc").Find(&handle_procs)
 	//query.Model(&models.Proc{}).With("Emp").With("Entry", func(query orm.Query) {
 	//	query.With("Emp")

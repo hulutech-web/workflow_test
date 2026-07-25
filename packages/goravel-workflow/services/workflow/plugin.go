@@ -52,6 +52,9 @@ func (c *Collector) AddHook(hook string) {
 
 // 执行插件中的Execute方法
 func (c *Collector) DoPluginsExec(plugin_name string, args ...interface{}) error {
+	if c == nil {
+		return nil
+	}
 	c.mutex.Lock()
 	defer c.mutex.Unlock()
 	for _, plugin := range c.plugins {

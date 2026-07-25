@@ -80,7 +80,7 @@ func (r *FlowController) Store(ctx http.Context) http.Response {
 		return httpfacades.NewResult(ctx).Error(500, "参数错误", map[string]any{})
 	}
 	facades.Orm().Query().Model(&models.Flow{}).Create(&flow)
-	return httpfacades.NewResult(ctx).Success("创建成功", nil)
+	return httpfacades.NewResult(ctx).Success("创建成功", flow)
 }
 
 func (r *FlowController) Update(ctx http.Context) http.Response {
@@ -119,16 +119,21 @@ func (r *FlowController) Publish(ctx http.Context) http.Response {
 	if err != nil {
 		return httpfacades.NewResult(ctx).Error(http.StatusInternalServerError, "查询失败", err)
 	}
-	if fkCount1 <= 1 {
+	if fkCount1 < 2 {
 		return httpfacades.NewResult(ctx).Error(http.StatusInternalServerError, "发布失败，至少需要两个步骤", nil)
 	}
 
-	fkCount2, err := facades.Orm().Query().Model(&models.Flowlink{}).Where("flow_id=?", flow_id).Where("type=?", "Condition").
-		Where("next_process_id=?", -1).Count()
+	fkCount2, err := facades.Orm().Query().Table("flowlinks").
+		Join("left join processes on flowlinks.process_id=processes.id").
+		Where("flowlinks.flow_id=?", flow_id).
+		Where("flowlinks.type=?", "Condition").
+		Where("flowlinks.next_process_id=?", -1).
+		Where("processes.position != ?", 9).
+		Count()
 	if err != nil {
 		return httpfacades.NewResult(ctx).Error(http.StatusInternalServerError, "查询失败", err)
 	}
-	if fkCount2 > 1 {
+	if fkCount2 > 0 {
 		return httpfacades.NewResult(ctx).Error(http.StatusInternalServerError, "发布失败，有步骤没有创建连线", nil)
 	}
 	type Countf struct {
@@ -143,7 +148,7 @@ func (r *FlowController) Publish(ctx http.Context) http.Response {
 		return httpfacades.NewResult(ctx).Error(http.StatusInternalServerError, "查询失败", err)
 	}
 	if !flowlinkExists {
-		return httpfacades.NewResult(ctx).Error(http.StatusInternalServerError, "发布失败，请设置结束步骤", nil)
+		return httpfacades.NewResult(ctx).Error(http.StatusInternalServerError, "发布失败，请配置从开始步骤出发的流程连线", nil)
 	}
 	flowlinks := []models.Flowlink{}
 	facades.Orm().Query().Table("flowlinks").Select("flowlinks.*").
@@ -169,7 +174,7 @@ func (r *FlowController) Publish(ctx http.Context) http.Response {
 	}
 
 	flow.IsPublish = true
-	facades.Orm().Query().Model(&models.Flow{}).Where("id=?", flow.ID).Save(&flow)
+	facades.Orm().Query().Model(&models.Flow{}).Where("id=?", flow.ID).Update("is_publish", true)
 
 	return httpfacades.NewResult(ctx).Success("发布成功", flow)
 }

@@ -51,6 +51,7 @@ func (receiver *ServiceProvider) Register(app foundation.Application) {
 
 	app.Commands([]console.Command{
 		commands.NewPlugin(),
+		commands.NewTimeoutCheckCommand(),
 	})
 
 }

@@ -968,24 +968,23 @@ func (w *Workflow) rejectToNode(query orm.Query, proc *models.Proc, emp models.E
 			return errors.New("目标审批节点不存在")
 		}
 
-		// Mark all procs between target and current as skipped
-		var currentProcs []models.Proc
+		// Save content on the rejecting proc before marking as skipped
+		proc.Status = models.ProcStatusSkipped
+		proc.Content = content
+		proc.AuditorID = cast.ToInt(emp.ID)
+		proc.AuditorName = emp.Name
+		query.Model(&models.Proc{}).Where("id=?", proc.ID).Save(&proc)
+
+		// Mark all remaining pending/approved procs as skipped (between target and current)
+		var remainingProcs []models.Proc
 		query.Model(&models.Proc{}).
 			Where("entry_id=?", proc.EntryID).
 			Where("circle=?", proc.Entry.Circle).
 			Where("status IN (?, ?)", models.ProcStatusPending, models.ProcStatusApproved).
-			Order("id ASC").
-			Find(&currentProcs)
-
-		skipped := false
-		for i := range currentProcs {
-			if skipped {
-				currentProcs[i].Status = models.ProcStatusSkipped
-				query.Model(&models.Proc{}).Where("id=?", currentProcs[i].ID).Save(&currentProcs[i])
-			}
-			if currentProcs[i].ProcessID == targetProcessID {
-				skipped = true
-			}
+			Find(&remainingProcs)
+		for i := range remainingProcs {
+			remainingProcs[i].Status = models.ProcStatusSkipped
+			query.Model(&models.Proc{}).Where("id=?", remainingProcs[i].ID).Save(&remainingProcs[i])
 		}
 
 		// Reset target proc to pending

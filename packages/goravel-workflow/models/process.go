@@ -19,7 +19,7 @@ type Process struct {
 	StyleWidth       int       `gorm:"column:style_width;not null;default:30" json:"style_width"`
 	PositionLeft     string    `gorm:"column:position_left;not null;default:'100px'" json:"position_left"`
 	PositionTop      string    `gorm:"column:position_top;not null;default:'200px'" json:"position_top"`
-	Position         int       `gorm:"column:position;not null;default:1;comment:'步骤位置：1正常步骤2：转入子流程0：第一步 当为2时 child_flow_id child_after child_back_process 可设置'" json:"position"`
+	Position         int       `gorm:"column:position;not null;default:1;comment:'步骤位置：0第一步(开始) 1正常步骤 2转入子流程 9结束 当为2时 child_flow_id child_after child_back_process 可设置'" json:"position"`
 	ChildFlowID      int       `gorm:"column:child_flow_id;not null;default:0;comment:'子流程id'" json:"child_flow_id"`
 	ChildAfter       int       `gorm:"column:child_after;not null;default:2;comment:'子流程结束后 1.同时结束父流程 2.返回父流程'" json:"child_after"`
 	ChildBackProcess int       `gorm:"column:child_back_process;not null;default:0;comment:'子流程结束后返回父流程进程'" json:"child_back_process"`

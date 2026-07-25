@@ -30,13 +30,13 @@ func init() {
 		"guards": map[string]any{
 			"user": map[string]any{
 				"driver":   "jwt",
-				"provider": "user",
+				"provider": "emp",
 			},
 		},
 
 		// Supported: "orm"
 		"providers": map[string]any{
-			"user": map[string]any{
+			"emp": map[string]any{
 				"driver": "orm",
 			},
 		},

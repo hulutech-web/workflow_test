@@ -52,7 +52,7 @@ func (r *FlowlinkController) Update(ctx http.Context) http.Response {
 		process.Style = style
 		//"width:128px;height:30px;line-height:30px;color:#FF8C00;left:461px;top:84px;"使用一个正则匹配到left:461px;top:84px;
 		re := regexp.MustCompile(`left:(\d+)px;top:(\d+)px;`)
-
+		process.ProcessTo = node.ProcessTo
 		matches := re.FindStringSubmatch(style)
 		// 检查是否找到匹配项
 		if matches != nil && len(matches) > 2 {
@@ -139,8 +139,8 @@ func (r *FlowlinkController) Update(ctx http.Context) http.Response {
 				Where("type!=?", "Condition").Update("next_process_id", defaultNextID)
 		}
 	}
-	flow.IsPublish = false
-	tx.Model(&models.Flow{}).Where("id=?", flow.ID).Save(&flow)
+	tx.Model(&models.Flow{}).Where("id=?", flow.ID).Update("jsplumb", flow.Jsplumb)
+	tx.Model(&models.Flow{}).Where("id=?", flow.ID).Update("is_publish", false)
 	tx.Commit()
 	return httpfacades.NewResult(ctx).Success("保存成功", nil)
 }
