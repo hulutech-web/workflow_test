@@ -150,7 +150,6 @@ func (r *ProcessController) Update(ctx http.Context) http.Response {
 			tx.Rollback()
 			return httpfacades.NewResult(ctx).Error(http.StatusInternalServerError, "数据错误", nil)
 		}
-		tx.Model(&models.Process{}).Where("id=?", id).Update("position", 0)
 	}
 	process.ProcessName = processRequest.ProcessName
 	process.StyleColor = processRequest.StyleColor
@@ -243,6 +242,10 @@ func (r *ProcessController) Update(ctx http.Context) http.Response {
 
 	for key, conditions := range conditionsMap {
 		jsonStr, _ := json.Marshal(conditions)
+		// json.Marshal escapes < > as < > (HTML safety), which MySQL then
+		// double-escapes to \u003c \u003e. Decode back to literal < > before storing
+		// so the runtime condition evaluator can build valid SQL.
+		jsonStr = fixJSONUnicodeEscapes(jsonStr)
 		tx.Model(&models.Flowlink{}).Where("id=?", key).Update(map[string]interface{}{
 			"expression":     jsonStr,
 			"condition_expr": jsonStr,
@@ -264,6 +267,14 @@ func (r *ProcessController) Update(ctx http.Context) http.Response {
 				defaultNextID = id
 			}
 		}
+	}
+
+	// 多条件节点（>1 条 Condition flowlink）：不强制设置非 Condition flowlink 的默认路由
+	// 每个分支独立路由，审批人设置不绑定固定的下一步骤
+	conditionCount, _ := tx.Model(&models.Flowlink{}).Where("flow_id=?", flow.ID).
+		Where("type=?", "Condition").Where("process_id=?", id).Count()
+	if conditionCount > 1 {
+		defaultNextID = 0
 	}
 
 	//权限处理
@@ -572,3 +583,5 @@ func (r *ProcessController) Condition(ctx http.Context) http.Response {
 
 	return httpfacades.NewResult(ctx).Success("", res)
 }
+
+// fixJSONUnicodeEscapes reverses Go's json.Marshal HTML escaping so that

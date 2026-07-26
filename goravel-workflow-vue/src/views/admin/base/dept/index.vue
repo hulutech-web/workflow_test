@@ -34,7 +34,7 @@
                         </template>
                     </a-table>
 
-                    <a-modal :footer="false" v-model:open="open" width="1000px" title="用户" centered @close="onClose"
+                    <a-modal :footer="false" v-model:open="open" width="1000px" title="员工&用户" centered @close="onClose"
                         :bodyStyle="{ height: '800px' }">
                         <Emplist @bind="bindins" />
                     </a-modal>

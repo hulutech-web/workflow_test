@@ -1,6 +1,6 @@
 <template>
 
-    <a-form :model="formField" ref="formEditRef">
+    <a-form :model="formField" ref="formEditRef" size="small">
         <a-form-item label="模板" name="template_id" v-if="!tid"
             :rules="[rulesStore.getRule('template_id') ? rulesStore.getRule('template_id') : { required: false }]">
             <a-select v-model:value="formField.template_id" :options="templateOpts">
@@ -63,6 +63,7 @@
 
 <script setup lang='ts'>
 
+import { PlusOutlined } from '@ant-design/icons-vue';
 import useRulesStore from '@/store/useRulesStore.ts'
 import { watch } from 'vue';
 const { storeTemplateForm, updateTemplateForm, showTemplateForm } = useTemplateForm();

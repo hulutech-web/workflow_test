@@ -1,44 +1,39 @@
 <template>
-  <div class="p-4">
-    <div class="mb-4">
-      <a-button type="link" @click="goBack">
-        <ArrowLeftOutlined /> 返回
-      </a-button>
-    </div>
+    <div class="p-2">
 
-    <a-card>
-      <template #title>
-        <span class="text-lg font-semibold">流程设计</span>
-      </template>
-      <template #extra>
-        <a-space>
-          <a-button type="primary" @click="saveDesign">保存位置</a-button>
-          <a-button type="primary" @click="publishDesign">发布流程</a-button>
-        </a-space>
-      </template>
-
-      <div id="flow-chart-container">
-        <hulu-menu :flow_id="(+id)" :init="initAll" ref="menuRef"/>
-
-        <div v-for="(node, nodeId) in nodeList" :key="node.id"
-             :class="'node' + (node.process_to ? ' source-node' : '')" :id="'node-' + node.id" :style="node.style">
-          <div class="flex justify-center align-items-center node-element" :id="`menu-${node.id}`">
-            <HuluIcon :id="`node-line-${node.id}-pointer`" fontSize="28px" :name="node.icon" color="#66CDAA"/>
-            <span class="font-bold text-lg">{{ node.process_name }}</span>
-            <a-button type="primary" style="color:#ffffff;z-index:20;background-color: #FFA500;" @click="setProcess(node)"
-                      shape="circle">
-              <FormOutlined class="node-setting"/>
-            </a-button>
-          </div>
+        <div class="mb-2">
+          <a-page-header
+              style="border: 1px solid rgb(235, 237, 240)"
+              title="流程设计"
+              sub-title="自由拖拽与连线，配置位置与现实图标和配色"
+              @back="goBack"
+          >
+            <template #extra>
+              <a-button type="primary" size="small" @click="saveDesign">保存位置</a-button>
+              <a-button type="primary" size="small" @click="publishDesign">发布流程</a-button>
+            </template>
+          </a-page-header>
         </div>
-      </div>
-    </a-card>
+            <div id="flow-chart-container">
+                <hulu-menu :flow_id="(+id)" :init="initAll" ref="menuRef"/>
 
-    <a-modal v-model:open="open" style="position: relative;" width="1200px" :footer="false" title="节点设计" centered
-             :bodyStyle="{ height: '700px' }">
-      <attrform :attrs="attrs" @updProcess="updProcess"/>
-    </a-modal>
-  </div>
+                <div v-for="(node, nodeId) in nodeList" :key="node.id"
+                     :class="'node' + (node.process_to ? ' source-node' : '')" :id="'node-' + node.id" :style="node.style">
+                  <div class="flex justify-center align-items-center node-element" :id="`menu-${node.id}`">
+                    <HuluIcon :id="`node-line-${node.id}-pointer`" fontSize="20px" :name="node.icon" color="#66CDAA"/>
+                    <span class="font-bold text-sm">{{ node.process_name }}</span>
+                    <a-button type="primary" style="color:#ffffff;z-index:20;background-color: #FFA500;" @click="setProcess(node)"
+                              shape="circle" size="small">
+                      <FormOutlined class="node-setting"/>
+                    </a-button>
+                  </div>
+                </div>
+            </div>
+
+        <a-modal v-model:open="open" style="position: relative;" width="1200px" :footer="false" title="节点设计">
+          <attrform :attrs="attrs" @updProcess="updProcess"/>
+        </a-modal>
+    </div>
 </template>
 
 <script setup lang='ts'>
@@ -77,6 +72,9 @@ onMounted(async () => {
 
 const updProcess = async (val) => {
   await updateProcess(process_id.value, val)
+  // 保存后重新加载流程数据，确保 flow.value.jsplumb 是最新的
+  await initAll()
+  open.value = false
 }
 
 const initAll = async () => {
@@ -119,12 +117,12 @@ const publishDesign = async () => {
 <style scoped>
 #flow-chart-container {
   width: 100%;
-  height: 750px;
+  height: 500px;
   border: 1px solid #ccc;
   position: relative;
   background-image: linear-gradient(90deg, rgba(200, 200, 200, 0.2) 1px, transparent 1px),
   linear-gradient(180deg, rgba(200, 200, 200, 0.2) 1px, transparent 1px);
-  background-size: 20px 20px;
+  background-size: 12px 12px;
 }
 
 .node {
@@ -132,12 +130,12 @@ const publishDesign = async () => {
   text-align: center;
 }
 
-
 .node-element {
   background-color: #FFFACD;
   border: 1px solid #FFFACD;
-  border-radius: 5px;
-  padding: 10px;
+  border-radius: 4px;
+  padding: 4px;
+  font-size: 12px;
 }
 
 .node-element:hover {

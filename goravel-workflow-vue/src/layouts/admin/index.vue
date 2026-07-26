@@ -27,7 +27,7 @@ const changeCollapse = (val) => {
                 <Left ref="triggleRef" />
             </a-layout-sider>
             <a-layout>
-                <a-layout-header style='background: #fff;height:80px;padding-inline:20px;'>
+                <a-layout-header style='background: #fff;height:48px;padding-inline:12px;'>
                     <Navbar @changeCollapse="changeCollapse" />
                 </a-layout-header>
                 <a-layout-content style='position:relative;' class='layout-content'>

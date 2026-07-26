@@ -1,44 +1,59 @@
 <template>
-    <div class="p-4">
-        <div class="mb-4">
-            <a-button type="link" @click="goBack">
+    <div class="p-2">
+        <div class="mb-2">
+            <a-button type="link" size="small" @click="goBack">
                 <ArrowLeftOutlined /> 返回
             </a-button>
         </div>
         <div class="flex justify-center">
-            <div class="w-full" style="max-width: 700px">
-                <a-watermark content="已发起">
-                    <a-card>
+            <div style="max-width: 700px; width: 100%">
+                <a-watermark :content="entry.status === -1 || entry.status === -2 ? '已驳回' : '已发起'">
+                    <a-card size="small">
                         <template #title>
                             <div class="text-center">
-                                <span class="text-lg font-semibold">{{ flow.flow_name }}</span>
-                                <a-tag v-if="flow.Template" color="blue" class="ml-2">
+                                <span class="text-base font-semibold">{{ flow.flow_name }}</span>
+                                <a-tag v-if="flow.Template" color="blue" class="ml-1">
                                     {{ flow.Template.template_name }}
                                 </a-tag>
                             </div>
                         </template>
 
-                        <Form :fields="fillFields" @submit="onSubmit" :entryDatas="entryDatas"
-                            ref="huluFormRef">
-                            <div>
-                                <div class="mb-2 text-base font-medium">批复内容：</div>
-                                <a-textarea v-model:value="content" placeholder="请填写批复内容" :rows="4" />
-                                <div class="mt-3 flex flex-wrap gap-2">
-                                    <a-button type="primary" @click="pass">同意</a-button>
-                                    <a-button type="primary" danger @click="unpass">驳回</a-button>
-                                    <a-button @click="showUnpassTo">驳回至节点</a-button>
-                                    <a-button @click="showAddSign">加签</a-button>
-                                    <a-button @click="showTransfer">转交</a-button>
-                                    <a-button @click="showComment">评论</a-button>
-                                </div>
-                            </div>
-                        </Form>
+                        <!-- 表单数据（只读展示） -->
+                        <a-descriptions v-if="fillFields.length" :column="1" size="small" bordered class="mb-3">
+                            <a-descriptions-item
+                                v-for="f in fillFields"
+                                :key="f.field"
+                                :label="f.field_name"
+                            >
+                                {{ entryDataMap[f.field] || '-' }}
+                            </a-descriptions-item>
+                        </a-descriptions>
+
+                        <a-divider class="!my-2" />
+
+                        <a-form ref="formRef" :model="formState" :label-col="{ span: 6 }" :wrapper-col="{ span: 16 }"
+                            size="small">
+                            <a-form-item label="批复内容">
+                                <a-textarea v-model:value="formState.content" :rows="3" placeholder="请填写批复内容" />
+                            </a-form-item>
+                        </a-form>
+
+                        <div class="mt-3 flex flex-wrap gap-2">
+                            <a-space size="small">
+                                <a-button type="primary" size="small" @click="pass">同意</a-button>
+                                <a-button type="primary" size="small" danger @click="unpass">驳回</a-button>
+                                <a-button size="small" @click="showUnpassTo">驳回至节点</a-button>
+                                <a-button size="small" @click="showAddSign">加签</a-button>
+                                <a-button size="small" @click="showTransfer">转交</a-button>
+                                <a-button size="small" @click="showComment">评论</a-button>
+                            </a-space>
+                        </div>
                     </a-card>
                 </a-watermark>
 
                 <!-- Comment thread -->
-                <a-card v-if="comments.length > 0" title="评论记录" class="mt-3">
-                    <a-list item-layout="horizontal" :data-source="comments">
+                <a-card v-if="comments.length > 0" title="评论记录" class="mt-2" size="small">
+                    <a-list item-layout="horizontal" :data-source="comments" size="small">
                         <template #renderItem="{ item }">
                             <a-list-item>
                                 <a-list-item-meta>
@@ -56,8 +71,8 @@
         </div>
 
         <!-- Add Sign Modal -->
-        <a-modal v-model:open="addSignOpen" title="加签" centered @ok="handleAddSign">
-            <a-form layout="vertical">
+        <a-modal v-model:open="addSignOpen" title="加签" centered size="small" @ok="handleAddSign">
+            <a-form layout="vertical" size="small">
                 <a-form-item label="选择员工">
                     <EmpSearch v-model="addSignEmpId" />
                 </a-form-item>
@@ -71,8 +86,8 @@
         </a-modal>
 
         <!-- Transfer Modal -->
-        <a-modal v-model:open="transferOpen" title="转交" centered @ok="handleTransfer">
-            <a-form layout="vertical">
+        <a-modal v-model:open="transferOpen" title="转交" centered size="small" @ok="handleTransfer">
+            <a-form layout="vertical" size="small">
                 <a-form-item label="转交给">
                     <EmpSearch v-model="transferEmpId" />
                 </a-form-item>
@@ -80,26 +95,26 @@
         </a-modal>
 
         <!-- Comment Modal -->
-        <a-modal v-model:open="commentOpen" title="添加评论" centered @ok="handleComment">
-            <a-form layout="vertical">
+        <a-modal v-model:open="commentOpen" title="添加评论" centered size="small" @ok="handleComment">
+            <a-form layout="vertical" size="small">
                 <a-form-item label="评论内容">
-                    <a-textarea v-model:value="commentContent" :rows="4" placeholder="请输入评论内容" />
+                    <a-textarea v-model:value="commentContent" :rows="3" placeholder="请输入评论内容" />
                 </a-form-item>
             </a-form>
         </a-modal>
 
         <!-- UnpassTo Modal -->
-        <a-modal v-model:open="unpassToOpen" title="驳回至指定节点" centered @ok="handleUnpassTo">
-            <a-form layout="vertical">
+        <a-modal v-model:open="unpassToOpen" title="驳回至指定节点" centered size="small" @ok="handleUnpassTo">
+            <a-form layout="vertical" size="small">
                 <a-form-item label="目标节点">
-                    <a-select v-model:value="targetProcessId" placeholder="请选择要驳回到的节点" style="width:100%">
+                    <a-select v-model:value="targetProcessId" placeholder="请选择要驳回到的节点" style="width:100%" size="small">
                         <a-select-option v-for="p in rejectableProcesses" :key="p.id" :value="p.id">
                             {{ p.process_name }} (位置: {{ p.position }})
                         </a-select-option>
                     </a-select>
                 </a-form-item>
                 <a-form-item label="驳回理由">
-                    <a-textarea v-model:value="unpassToContent" :rows="4" placeholder="请输入驳回理由" />
+                    <a-textarea v-model:value="unpassToContent" :rows="3" placeholder="请输入驳回理由" />
                 </a-form-item>
             </a-form>
         </a-modal>
@@ -111,7 +126,7 @@ import { message } from 'ant-design-vue';
 import EmpSearch from '@/components/empsearch/index.vue';
 
 const { loadFlowEntryConfig, getEntryData } = useEntry();
-const { setPass, setUnPass, addSign, transferProc, addComment, getComments, getRejectableProcesses, indexProcs } = useProc();
+const { setPass, setUnPass, addSign, transferProc, addComment, getComments, getRejectableProcesses } = useProc();
 const route = useRoute();
 const router = useRouter()
 const goBack = () => router.back()
@@ -126,6 +141,7 @@ const fillFields = ref([]);
 const flow = ref({})
 const entry = ref({})
 const comments = ref<any[]>([])
+const formState = ref({ content: '' })
 
 const init = async () => {
     if (flow_id) {
@@ -140,6 +156,13 @@ const init = async () => {
 }
 
 const entryDatas = ref([])
+const entryDataMap = computed(() => {
+    const map: Record<string, string> = {}
+    entryDatas.value.forEach((ed: any) => {
+        map[ed.field_name] = ed.field_value
+    })
+    return map
+})
 const loadEntryDatas = async () => {
     const { data } = await getEntryData(entry_id)
     entryDatas.value = data.entrydata
@@ -155,22 +178,13 @@ const loadComments = async () => {
     }
 }
 
-const content = ref("")
-const huluFormRef = ref()
-const onSubmit = async (values) => {
-    // handled by action buttons
-}
-
 const pass = async () => {
     try {
-        const formData = huluFormRef.value?.getFormData?.() || {}
         await setPass({
-            ...formData,
-            content: content.value,
+            content: formState.value.content,
             process_id: process_id,
             entry_id: entry_id,
         })
-        message.success('审批通过')
         history.back()
     } catch (e) {
         // error handled by interceptor
@@ -180,11 +194,10 @@ const pass = async () => {
 const unpass = async () => {
     try {
         await setUnPass({
-            content: content.value,
+            content: formState.value.content,
             proc_id: proc_id,
             entry_id: entry_id,
         })
-        message.success('已驳回')
         history.back()
     } catch (e) {
         // error handled by interceptor
@@ -208,7 +221,6 @@ const handleAddSign = async () => {
             sign_emp_id: addSignEmpId.value,
             sign_type: addSignType.value,
         })
-        message.success('加签成功')
         addSignOpen.value = false
     } catch (e) {
         // error handled by interceptor
@@ -230,7 +242,6 @@ const handleTransfer = async () => {
             proc_id: proc_id,
             target_emp_id: transferEmpId.value,
         })
-        message.success('转交成功')
         transferOpen.value = false
     } catch (e) {
         // error handled by interceptor
@@ -251,7 +262,6 @@ const handleComment = async () => {
             entry_id: entry_id,
             content: commentContent.value,
         })
-        message.success('评论成功')
         commentContent.value = ''
         commentOpen.value = false
         await loadComments()
@@ -285,10 +295,9 @@ const handleUnpassTo = async () => {
         await setUnPass({
             proc_id: proc_id,
             entry_id: entry_id,
-            content: unpassToContent.value || content.value,
+            content: unpassToContent.value || formState.value.content,
             target_process_id: targetProcessId.value,
         })
-        message.success('已驳回至指定节点')
         unpassToOpen.value = false
         history.back()
     } catch (e) {

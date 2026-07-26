@@ -1,7 +1,6 @@
 package controllers
 
 import (
-	GlobalModel "goravel/app/models"
 	"goravel/packages/goravel-workflow/models"
 
 	"github.com/goravel/framework/contracts/http"
@@ -19,10 +18,8 @@ func NewCcController() *CcController {
 func (r *CcController) Index(ctx http.Context) http.Response {
 
 	var ccRecords []models.CcRecord
-	var user GlobalModel.User
-	facades.Auth(ctx).User(&user)
 	queries := ctx.Request().Queries()
-	res, _ := httpfacades.NewResult(ctx).SearchByParams(queries, map[string]interface{}{"user_id": user.ID}).ResultPagination(&ccRecords, nil)
+	res, _ := httpfacades.NewResult(ctx).SearchByParams(queries, nil).ResultPagination(&ccRecords, nil)
 
 	//facades.Orm().Query().Model(&models.CcRecord{}).Where("emp_id=?", emp.ID).Order("id desc").Find(&ccRecords)
 	return httpfacades.NewResult(ctx).Success("", res)

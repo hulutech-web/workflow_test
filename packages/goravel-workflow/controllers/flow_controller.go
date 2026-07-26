@@ -96,13 +96,15 @@ func (r *FlowController) Update(ctx http.Context) http.Response {
 }
 
 func (r *FlowController) Destroy(ctx http.Context) http.Response {
-	return nil
+	id := ctx.Request().RouteInt("id")
+	facades.Orm().Query().Where("id=?", id).Delete(&models.Flow{})
+	return httpfacades.NewResult(ctx).Success("删除成功", nil)
 }
 
 func (r *FlowController) FlowDesign(ctx http.Context) http.Response {
 	id := ctx.Request().RouteInt("id")
 	flow := models.Flow{}
-	facades.Orm().Query().Model(&models.Flow{}).Where("id=?", id).Find(&flow)
+	facades.Orm().Query().Model(&models.Flow{}).With("Processes").With("ProcessVars").Where("id=?", id).Find(&flow)
 	return httpfacades.NewResult(ctx).Success("", flow)
 }
 
@@ -118,11 +120,13 @@ func (r *FlowController) Publish(ctx http.Context) http.Response {
 	if len(process_starts) > 1 {
 		return httpfacades.NewResult(ctx).Error(http.StatusInternalServerError, "发布失败，只能设置一个开始步骤", nil)
 	}
-	fkCount1, err := facades.Orm().Query().Model(&models.Flowlink{}).Where("flow_id=?", flow_id).Where("type=?", "Condition").Count()
+	// 检查至少有足够的步骤：统计所有流程步骤数量（flows表关联processes）
+	// 以前要求 Condition flowlink >= 2，但简单线性流程不需要条件分支也能发布
+	processCount, err := facades.Orm().Query().Model(&models.Process{}).Where("flow_id=?", flow_id).Count()
 	if err != nil {
 		return httpfacades.NewResult(ctx).Error(http.StatusInternalServerError, "查询失败", err)
 	}
-	if fkCount1 < 2 {
+	if processCount < 2 {
 		return httpfacades.NewResult(ctx).Error(http.StatusInternalServerError, "发布失败，至少需要两个步骤", nil)
 	}
 
@@ -153,6 +157,10 @@ func (r *FlowController) Publish(ctx http.Context) http.Response {
 		}
 
 		for processID, links := range byProcess {
+			// 跳过只有一条空 expression 的 Condition flowlink（单出口节点残留，不是真正的条件分支）
+			if len(links) == 1 && links[0].Expression == "" {
+				continue
+			}
 			if err := workflow.ValidateConditionFlowlinks(links); err != nil {
 				var process models.Process
 				facades.Orm().Query().Model(&models.Process{}).Where("id=?", processID).Find(&process)

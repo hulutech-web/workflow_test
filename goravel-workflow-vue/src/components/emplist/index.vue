@@ -1,6 +1,5 @@
 <template>
     <div>
-        <h1>员工列表</h1>
         <vxe-grid ref='xGrid' v-bind="gridOptions" v-on="gridEvent">
             <template #action="{ row }">
                 <div>

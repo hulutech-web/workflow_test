@@ -32,6 +32,20 @@ export default () => {
       data: data,
     });
   };
+  const updateDept = async (data) => {
+    return await http.request({
+      url: `dept/${data.id}`,
+      method: "PUT",
+      data: data,
+    });
+  };
+  const createDept = async (data) => {
+    return await http.request({
+      url: `dept`,
+      method: "POST",
+      data: data,
+    });
+  };
   const gridOptions = reactive<VxeGridProps<RowVO>>({
     border: "full",
     // size: "small",
@@ -233,6 +247,8 @@ export default () => {
     loadDepts,
     setManager,
     setDirector,
-    loadDeptList, // 获取部门列表
+    loadDeptList,
+    updateDept,
+    createDept,
   };
 };

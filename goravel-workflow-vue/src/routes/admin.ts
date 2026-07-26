@@ -196,6 +196,31 @@ export default [
                   menu: { title: "流程实例", icon: "UnorderedListOutlined", order: 800 },
                 },
               },
+              {
+                name: "admin.flow.entry_archive_list",
+                path: "entry_archive_list",
+                component: () =>
+                  import("@/views/admin/base/flow/entry_archive_list.vue"),
+                meta: {
+                  title: "归档审批",
+                  menu: { title: "归档审批", icon: "FolderOpenOutlined", order: 810 },
+                },
+              },
+              {
+                name: "admin.flow.entry_archive_detail",
+                path: "archive/:id",
+                component: () =>
+                  import("@/views/admin/base/flow/entry_archive_detail.vue"),
+                meta: {
+                  title: "归档详情",
+                  menu: {
+                    title: "归档详情",
+                    icon: "FolderOpenOutlined",
+                    order: 811,
+                    show: false,
+                  },
+                },
+              },
             ],
           },
           {
@@ -240,8 +265,7 @@ export default [
             component: Translation,
             meta: {
               title: "插件管理",
-              menu: { title: "插件管理", icon: "HddOutlined", order: 1000,show:false},
-              show:false,
+              menu: { title: "插件管理", icon: "HddOutlined", order: 1000},
             },
             children: [
               {

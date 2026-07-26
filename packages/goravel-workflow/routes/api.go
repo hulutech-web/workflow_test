@@ -54,6 +54,8 @@ func Api(app foundation.Application) {
 		//entry节点
 		entryCtrl := controllers.NewEntryController()
 		router.Get("flow/{id}/entry", entryCtrl.Create)
+		router.Get("entry", entryCtrl.Index)
+
 		router.Post("entry", entryCtrl.Store)
 		router.Get("entry/{id}", entryCtrl.Show)
 		router.Put("entry/{id}", entryCtrl.Update)
@@ -106,7 +108,12 @@ func Api(app foundation.Application) {
 
 		//抄送
 		ccCtrl := controllers.NewCcController()
-		router.Get("cc/list", ccCtrl.Index)
+		router.Get("cc", ccCtrl.Index)
 		router.Get("cc/entry/{entry_id}", ccCtrl.GetEntryCC)
+
+		//归档审批
+		archiveCtrl := controllers.NewEntryArchiveController()
+		router.Get("archive", archiveCtrl.Index)
+		router.Get("archive/{id}", archiveCtrl.Show)
 	})
 }

@@ -1,6 +1,6 @@
 <template>
     <div v-if="formFields">
-        <a-form :model="formState" ref="formRef" :label-col="{ span: 6 }" :wrapper-col="{ span: 18 }" style="max-width: 100%">
+        <a-form :model="formState" ref="formRef" :label-col="{ span: 6 }" :wrapper-col="{ span: 18 }" style="max-width: 100%" size="small">
             <div v-for="(field, index) in formFields" :key="index" v-if="formFields.length > 0">
                 <a-form-item :label="field.field_name" v-if="field['field_type'] == 'text'" :name="field.field"
                     :rules="[rulesStore.getRule(field.field) ? rulesStore.getRule(field.field) : { required: false }]">

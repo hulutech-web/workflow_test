@@ -75,7 +75,7 @@ export default () => {
 
   const gridOptions = reactive<VxeGridProps<RowVO>>({
     border: "full",
-    // size: "small",
+    size: "small",
     showHeaderOverflow: true,
     showOverflow: true,
     keepSource: true,

@@ -300,6 +300,29 @@ func (r *M20240624000000CreateWorkflowBaseTables) Up() error {
 		return err
 	}
 
+	// --- entry_archives table ---
+	// 审批完结（通过/驳回/撤回）后完整快照，防止员工离职后关联查询失败。
+	// 所有动态数据（表单字段、审批链、流程定义）序列化为 JSON，永久可查。
+	if err := facades.Schema().Create("entry_archives", func(table schema.Blueprint) {
+		table.ID()
+		table.BigInteger("entry_id").Comment("原实例ID")
+		table.BigInteger("flow_id").Comment("流程ID")
+		table.Integer("status").Comment("完结状态: 9=通过 -1=驳回 -2=撤回")
+		table.String("title").Default("").Comment("标题")
+		table.Text("flow_snapshot").Comment("流程定义快照(Flow JSON)")
+		table.Text("entry_snapshot").Comment("实例快照(Entry + 发起人 JSON)")
+		table.Text("form_data_snapshot").Comment("表单数据快照(EntryData[] JSON)")
+		table.Text("procs_snapshot").Comment("审批链快照(Proc[] JSON，含审批人信息)")
+		table.Text("comments_snapshot").Comment("评论快照(ProcComment[] JSON)")
+		table.Text("cc_snapshot").Comment("抄送快照(CcRecord[] JSON)")
+		table.Timestamps()
+		table.Index("entry_id").Name("idx_archive_entry_id")
+		table.Index("flow_id").Name("idx_archive_flow_id")
+		table.Index("status").Name("idx_archive_status")
+	}); err != nil {
+		return err
+	}
+
 	// --- Performance indexes ---
 	indexes := []struct {
 		table   string
@@ -327,7 +350,7 @@ func (r *M20240624000000CreateWorkflowBaseTables) Up() error {
 
 func (r *M20240624000000CreateWorkflowBaseTables) Down() error {
 	tables := []string{
-		"cc_records", "proc_comments", "proc_add_signs",
+		"entry_archives", "cc_records", "proc_comments", "proc_add_signs",
 		"products", "attachments", "procs", "entrydatas", "entries",
 		"templateforms", "templates", "processvars", "processes",
 		"flowlinks", "flowtypes", "flows", "emps", "depts",

@@ -1,27 +1,23 @@
 <template>
-    <div>
-        <a-card title="员工管理">
+    <div class="p-2">
+        <a-card size="small" title="员工管理">
             <template #extra>
-                <div>
-                    <a-button type="primary" @click="addEmp">创建员工</a-button>
-                </div>
+                <a-button type="primary" size="small" @click="addEmp">创建员工</a-button>
             </template>
-            <vxe-grid ref='xGrid' v-bind="gridOptions" v-on="gridEvent">
+            <vxe-grid ref='xGrid' v-bind="{ ...gridOptions, size: 'small' }" v-on="gridEvent">
                 <template #action="{ row }">
-                    <div>
-                        <a-button type="primary">删除</a-button>
-                        <a-button type="primary">编辑</a-button>
-                        <a-button type="primary" @click="bind(row)">绑定用户</a-button>
-                    </div>
+                    <a-space size="small">
+                        <a-button type="primary" size="small">删除</a-button>
+                        <a-button type="primary" size="small">编辑</a-button>
+                        <a-button type="primary" size="small" @click="bind(row)">绑定用户</a-button>
+                    </a-space>
                 </template>
                 <template #dept="{ row }">
-                    <div>
-                        {{ row.Dept.id == 0 ? "未分配" : row.Dept.dept_name }}
-                    </div>
+                    <span>{{ row.Dept.id == 0 ? "未分配" : row.Dept.dept_name }}</span>
                 </template>
             </vxe-grid>
-            <a-modal :footer="false" v-model:open="open" width="1000px" title="用户" centered
-                :bodyStyle="{ height: '800px' }">
+            <a-modal :footer="false" v-model:open="open" width="800px" title="用户" centered size="small"
+                :bodyStyle="{ height: '600px' }">
                 <Userlist @bind="bindins" />
             </a-modal>
         </a-card>
@@ -40,17 +36,11 @@ const rulesStore = useRulesStore()
 const xGrid = ref()
 const gridEvent: VxeGridListeners<RowVO> = {
     proxyQuery() {
-        console.log('数据代理查询事件')
         const grid = xGrid.value
-        // 获取表格中的数据
         const data = grid.getTableData().fullData
     },
-    proxyDelete() {
-        console.log('数据代理删除事件')
-    },
-    proxySave() {
-        console.log('数据代理保存事件')
-    }
+    proxyDelete() {},
+    proxySave() {}
 }
 const open = ref(false)
 const addEmp = () => {
@@ -73,25 +63,14 @@ const bindins = async (val) => {
 
 const onSubmit = async () => {
     try {
-        //先清空一下验证
         formRef.value.clearValidate()
     } catch (error) {
-        formRef.value
-            .validate()
-            .then(() => {
-
-            })
-            .catch(error => {
-                if (error) {
-                    return;
-                }
-            });
+        // handled
     }
 }
 
 
 const bind = (val) => {
-    console.log(val)
     open.value = true
     state.value.emp_id = val.id
 }

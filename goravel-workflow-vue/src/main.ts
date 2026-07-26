@@ -1,5 +1,5 @@
 import plugin from '@/plugins'
-import '@/assets/global.scss'
+// import '@/assets/global.scss'
 import { createApp } from 'vue'
 import App from './App.vue'
 

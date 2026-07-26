@@ -41,36 +41,9 @@
 </template>
 
 <script setup lang="ts">
-const { getCcList, getEntryCc } = useCc()
+const { getCcList, getEntryCc ,gridOptions} = useCc()
 const xGrid = ref()
 
-const gridOptions = {
-    border: true,
-    stripe: true,
-    showOverflow: true,
-    columns: [
-        { field: 'entry_id', title: '申请ID', width: 100 },
-        { field: 'entry_title', title: '标题', minWidth: 200 },
-        { field: 'flow_name', title: '流程名称', minWidth: 150 },
-        { field: 'process_name', title: '环节', width: 120 },
-        { field: 'emp_name', title: '发起人', width: 100 },
-        { field: 'cc_time', title: '抄送时间', width: 180 },
-        { title: '状态', slotName: 'status', width: 100 },
-        { title: '操作', slotName: 'action', width: 100 },
-    ],
-    proxyConfig: {
-        proxy: true,
-        ajax: {
-            query: async ({ page }) => {
-                const { data } = await getCcList()
-                return {
-                    total: data?.length || 0,
-                    items: data || []
-                }
-            }
-        }
-    }
-}
 
 const gridEvent: VxeGridListeners<RowVO> = {
     proxyQuery() {
@@ -100,9 +73,6 @@ const viewCcDetail = async (row: any) => {
     detailOpen.value = true
 }
 
-onMounted(() => {
-    xGrid.value?.commitProxy('query')
-})
 </script>
 
 <style scoped></style>

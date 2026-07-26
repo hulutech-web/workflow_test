@@ -1,13 +1,13 @@
 <template>
-    <div class="p-4">
-        <div class="mb-4">
-            <a-button type="link" @click="goBack">
+    <div class="p-2">
+        <div class="mb-2">
+            <a-button type="link" size="small" @click="goBack">
                 <ArrowLeftOutlined /> 返回
             </a-button>
         </div>
         <div class="flex justify-center">
-            <div class="w-full" style="max-width: 700px">
-                <a-card title="创建流程">
+            <div style="max-width: 700px; width: 100%">
+                <a-card size="small" title="新建流程">
                     <Form />
                 </a-card>
             </div>

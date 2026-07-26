@@ -26,6 +26,16 @@ func (r *HomeController) Index(ctx http.Context) http.Response {
 	emp := models.Emp{}
 	facades.Orm().Query().Model(&models.Emp{}).Where("user_id=?", user.ID).Find(&emp)
 	query := facades.Orm().Query()
+
+	// 统计数据（Dept、Emp、Flow、Template、Entry 在 workflow 包中；User 由宿主应用提供，跳过）
+	var deptCount, empCount, flowCount, templateCount, entryCount, pendingCount int64
+	deptCount, _ = query.Model(&models.Dept{}).Count()
+	empCount, _ = query.Model(&models.Emp{}).Count()
+	flowCount, _ = query.Model(&models.Flow{}).Count()
+	templateCount, _ = query.Model(&models.Template{}).Count()
+	entryCount, _ = query.Model(&models.Entry{}).Count()
+	pendingCount, _ = query.Model(&models.Proc{}).Where("status=?", models.ProcStatusPending).Count()
+
 	//我的申请
 	query.Model(&models.Entry{}).With("Emp").With("Flow").With("Procs", func(q orm.Query) orm.Query {
 		return q.Order("id desc").Limit(1)
@@ -36,7 +46,7 @@ func (r *HomeController) Index(ctx http.Context) http.Response {
 	query.Model(&models.Proc{}).With("Emp").With("Entry", func(query orm.Query) orm.Query {
 		return query.With("Emp")
 	}).Where("emp_id=?", user.ID).Where("status=?", models.ProcStatusPending).
-		Order("is_read asc").Order("status asc").Order("id desc").Find(&procs)
+		Order("id desc").Find(&procs)
 
 	//工作流
 	flows := []models.Flow{}
@@ -54,9 +64,21 @@ func (r *HomeController) Index(ctx http.Context) http.Response {
 
 	//我的抄送
 	ccRecords := []models.CcRecord{}
-	facades.Orm().Query().Model(&models.CcRecord{}).Where("emp_id=?", emp.ID).Order("id desc").Find(&ccRecords)
+	facades.Orm().Query().Model(&models.CcRecord{}).
+		With("Entry", func(query orm.Query) orm.Query {
+			return query.With("Emp").With("Flow").With("Process")
+		}).
+		Where("emp_id=?", emp.ID).Order("id desc").Find(&ccRecords)
 
 	return httpfacades.NewResult(ctx).Success("", map[string]interface{}{
+		"stats": map[string]int64{
+			"dept_count":     deptCount,
+			"emp_count":      empCount,
+			"flow_count":     flowCount,
+			"template_count": templateCount,
+			"entry_count":    entryCount,
+			"pending_count":  pendingCount,
+		},
 		"entries":      entries,
 		"procs":        procs,
 		"flows":        flows,

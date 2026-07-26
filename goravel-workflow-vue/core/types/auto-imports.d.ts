@@ -70,6 +70,7 @@ declare global {
   const useDevice: typeof import('../../src/composables/bus/useDevice')['default']
   const useEmp: typeof import('../../src/composables/bus/useEmp')['default']
   const useEntry: typeof import('../../src/composables/bus/useEntry')['default']
+  const useEntryArchive: typeof import('../../src/composables/bus/useEntryArchive')['default']
   const useErrorStore: typeof import('../../src/store/useErrorStore')['default']
   const useExcel: typeof import('../../src/composables/bus/useExcel')['default']
   const useFlow: typeof import('../../src/composables/bus/useFlow')['default']
@@ -177,6 +178,7 @@ declare module 'vue' {
     readonly useDept: UnwrapRef<typeof import('../../src/composables/bus/useDept')['default']>
     readonly useEmp: UnwrapRef<typeof import('../../src/composables/bus/useEmp')['default']>
     readonly useEntry: UnwrapRef<typeof import('../../src/composables/bus/useEntry')['default']>
+    readonly useEntryArchive: UnwrapRef<typeof import('../../src/composables/bus/useEntryArchive')['default']>
     readonly useErrorStore: UnwrapRef<typeof import('../../src/store/useErrorStore')['default']>
     readonly useExcel: UnwrapRef<typeof import('../../src/composables/bus/useExcel')['default']>
     readonly useFlow: UnwrapRef<typeof import('../../src/composables/bus/useFlow')['default']>
@@ -274,6 +276,7 @@ declare module '@vue/runtime-core' {
     readonly useDept: UnwrapRef<typeof import('../../src/composables/bus/useDept')['default']>
     readonly useEmp: UnwrapRef<typeof import('../../src/composables/bus/useEmp')['default']>
     readonly useEntry: UnwrapRef<typeof import('../../src/composables/bus/useEntry')['default']>
+    readonly useEntryArchive: UnwrapRef<typeof import('../../src/composables/bus/useEntryArchive')['default']>
     readonly useErrorStore: UnwrapRef<typeof import('../../src/store/useErrorStore')['default']>
     readonly useExcel: UnwrapRef<typeof import('../../src/composables/bus/useExcel')['default']>
     readonly useFlow: UnwrapRef<typeof import('../../src/composables/bus/useFlow')['default']>

@@ -9,6 +9,7 @@ import (
 	"goravel/packages/goravel-workflow/services/workflow"
 	"goravel/packages/goravel-workflow/services/workflow/official_plugins"
 
+	"github.com/goravel/framework/contracts/database/orm"
 	"github.com/goravel/framework/contracts/http"
 	"github.com/goravel/framework/facades"
 	"github.com/goravel/framework/validation"
@@ -37,14 +38,48 @@ func (r *EntryController) Create(ctx http.Context) http.Response {
 }
 
 func (r *EntryController) Index(ctx http.Context) http.Response {
-	return nil
+	entries := []models.Entry{}
+	queries := ctx.Request().Queries()
+	result, _ := httpfacades.NewResult(ctx).SearchByParams(queries, nil).ResultPagination(&entries, []httpfacades.WithConfig{
+		{
+			Relation: "Flow",
+			Callback: nil,
+		},
+		{
+			Relation: "Emp",
+			Callback: nil,
+		},
+		{
+			Relation: "Process",
+			Callback: nil,
+		},
+	})
+	return result
 }
 
 func (r *EntryController) Show(ctx http.Context) http.Response {
 	id := ctx.Request().RouteInt("id")
 	var entry models.Entry
-	facades.Orm().Query().Model(&models.Entry{}).With("EntryDatas").With("Flow.Template.TemplateForms").Where("id", id).Find(&entry)
-	return httpfacades.NewResult(ctx).Success("", entry)
+	facades.Orm().Query().Model(&models.Entry{}).
+		With("EntryDatas").
+		With("Flow.Template.TemplateForms").
+		With("Emp.Dept").
+		With("Procs", func(q orm.Query) orm.Query {
+			return q.Order("id asc")
+		}).
+		With("Process").
+		With("EnterProcess").
+		Where("id", id).Find(&entry)
+
+	var comments []models.ProcComment
+	facades.Orm().Query().Model(&models.ProcComment{}).
+		Where("entry_id = ? AND status = ?", id, 1).
+		Order("id asc").Find(&comments)
+
+	return httpfacades.NewResult(ctx).Success("", http.Json{
+		"entry":    entry,
+		"comments": comments,
+	})
 }
 
 func (r *EntryController) EntryData(ctx http.Context) http.Response {
@@ -123,6 +158,15 @@ func (r *EntryController) Store(ctx http.Context) http.Response {
 
 	all := ctx.Request().All()
 	entry.Title = cast.ToString(all["title"])
+	// 如果没有 title，取第一个表单字段的值作为标题
+	if entry.Title == "" {
+		for key, val := range all {
+			if key != "flow_id" && key != "id" && key != "entry_id" {
+				entry.Title = cast.ToString(val)
+				break
+			}
+		}
+	}
 	entry.FlowID = cast.ToUint(flow_id)
 	entry.EmpID = user.ID
 	entry.Circle = 1

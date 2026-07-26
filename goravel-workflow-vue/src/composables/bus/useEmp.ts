@@ -82,13 +82,13 @@ export default () => {
       iconClose: "vxe-icon--caret-top",
     },
     formConfig: {
-      titleWidth: 120,
+      titleWidth: 80,
       titleAlign: "right",
       items: [
         {
           field: "name",
           title: "名称",
-          span: 6,
+          span: 12,
           titlePrefix: {
             useHTML: true,
             message: "模糊查询",

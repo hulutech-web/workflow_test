@@ -158,34 +158,54 @@ export default () => {
       { field: "id", title: "id", width: 100 },
       // 配置日期选择器
       {
-        field: "name",
-        title: "名称",
+        field: "entry_id",
+        title: "表单",
         sortable: true,
       },
       {
-        field: "workno",
-        title: "工号",
+        field: "flow_id",
+        title: "流程",
         sortable: true,
       },
       {
-        field: "email",
-        title: "邮箱",
+        field: "emp_id",
+        title: "员工",
         sortable: true,
       },
       {
-        field: "Dept",
-        title: "部门",
+        field: "process_id",
+        title: "步骤",
         sortable: true,
-        slots: {
-          default: "dept",
-        },
       },
       {
-        title: "操作",
+        field: "circle",
+        title: "轮数",
         sortable: true,
-        slots: {
-          default: "action",
-        },
+      },
+      {
+        field: "status",
+        title: "状态",
+        sortable: true,
+      },
+      {
+        field: "pid",
+        title: "上一级",
+        sortable: true,
+      },
+      {
+        field: "enter_process_id",
+        title: "进入当前",
+        sortable: true,
+      },
+      {
+        field: "enter_proc_id",
+        title: "进入子流程",
+        sortable: true,
+      },
+      {
+        field: "child",
+        title: "子流程process_id",
+        sortable: true,
       },
     ],
     importConfig: {},

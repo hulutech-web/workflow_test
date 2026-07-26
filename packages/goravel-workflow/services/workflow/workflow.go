@@ -231,12 +231,17 @@ func (w *Workflow) SetFirstProcessAuditor(entry models.Entry, flowlink models.Fl
 				return err
 			}
 
-			// Advance directly to the next step — condition evaluation is deferred to Transfer()
-			nextProcID := cast.ToInt(flowlink.NextProcessID)
-			auditor_ids = w.GetProcessAuditorIds(entry, nextProcID)
+			// Evaluate condition branches at creation time to route to correct step
+			var nextProcID int
+			var proc_name string
+			var evalErr error
+			auditor_ids, nextProcID, proc_name, evalErr = w.evalConditionsAtCreate(tx, &entry, cast.ToInt(flowlink.ProcessID))
+			if evalErr != nil {
+				return evalErr
+			}
 			process_id = nextProcID
-			process_name = flowlink.NextProcess.ProcessName
-			entry.ProcessID = cast.ToUint(flowlink.NextProcessID)
+			process_name = proc_name
+			entry.ProcessID = cast.ToUint(nextProcID)
 		} else {
 			auditor_ids = w.GetProcessAuditorIds(entry, cast.ToInt(flowlink.ProcessID))
 			process_id = cast.ToInt(flowlink.ProcessID)
@@ -306,7 +311,7 @@ func (w *Workflow) evalConditionsAtCreate(tx orm.Query, entry *models.Entry, pro
 		}
 
 		processConditions := []common.ProcessCondition{}
-		if err := json.Unmarshal([]byte(m.Expression), &processConditions); err != nil {
+		if err := json.Unmarshal([]byte(UnescapeExpressionJSON(m.Expression)), &processConditions); err != nil {
 			continue
 		}
 		if len(processConditions) == 0 {
@@ -640,7 +645,7 @@ func (w *Workflow) transferWithConditions(query orm.Query, proc *models.Proc, co
 		}
 
 		processConditions := []common.ProcessCondition{}
-		if err := json.Unmarshal([]byte(m.Expression), &processConditions); err != nil {
+		if err := json.Unmarshal([]byte(UnescapeExpressionJSON(m.Expression)), &processConditions); err != nil {
 			continue
 		}
 		if len(processConditions) == 0 {
@@ -789,6 +794,7 @@ func (w *Workflow) handleLastStep(query orm.Query, proc *models.Proc, fklink *mo
 	procEntry.Status = 9 // Completed
 	procEntry.ProcessID = fklink.ProcessID
 	query.Model(&models.Entry{}).Where("id=?", procEntry.ID).Save(&procEntry)
+	w.archiveEntry(proc.EntryID, models.ProcStatusConsensus)
 
 	if proc.Entry.Pid > 0 {
 		return w.handleParentAfterChildComplete(query, proc, content, emp)
@@ -1047,6 +1053,7 @@ func (w *Workflow) rejectToNode(query orm.Query, proc *models.Proc, emp models.E
 
 		w.NotifyNextAuditor(uint(targetProc.EmpID))
 		w.NotifySendOne(proc.Entry.EmpID)
+		w.archiveEntry(proc.EntryID, models.ProcStatusRejected)
 		return nil
 	}
 
@@ -1112,6 +1119,7 @@ func (w *Workflow) Revoke(entryID uint, user models.Emp) error {
 
 		entry.Status = models.ProcStatusRevoked
 		tx.Model(&models.Entry{}).Where("id=?", entryID).Save(&entry)
+		w.archiveEntry(entryID, models.ProcStatusRevoked)
 
 		for _, p := range pendingProcs {
 			p.Status = models.ProcStatusRevoked
@@ -1292,5 +1300,64 @@ func (w *Workflow) triggerCC(entryID, flowID, processID, procID uint) {
 			Status:    0,
 		}
 		facades.Orm().Query().Model(&models.CcRecord{}).Create(&record)
+	}
+}
+
+// archiveEntry creates a complete snapshot of the entry when it finishes
+// (approved/rejected/revoked). All dynamic data is serialized to JSON so the
+// record remains readable even after employees leave the organization.
+func (w *Workflow) archiveEntry(entryID uint, finalStatus int) {
+	query := facades.Orm().Query()
+
+	// 1. Load full entry with all related data
+	var entry models.Entry
+	query.Model(&models.Entry{}).
+		Where("id = ?", entryID).
+		With("Emp.Dept").
+		With("Flow").
+		With("Process").
+		With("EntryDatas").
+		With("Procs").
+		First(&entry)
+	if entry.ID == 0 {
+		return
+	}
+
+	// 2. Load comments
+	var comments []models.ProcComment
+	query.Model(&models.ProcComment{}).Where("entry_id = ? AND status = 1", entryID).Find(&comments)
+
+	// 3. Load cc records
+	var ccRecords []models.CcRecord
+	query.Model(&models.CcRecord{}).Where("entry_id = ?", entryID).Find(&ccRecords)
+
+	// 4. Serialize to JSON
+	flowJSON, _ := json.Marshal(entry.Flow)
+	entryJSON, _ := json.Marshal(entry)
+	formDataJSON, _ := json.Marshal(entry.EntryDatas)
+	procsJSON, _ := json.Marshal(entry.Procs)
+	commentsJSON, _ := json.Marshal(comments)
+	ccJSON, _ := json.Marshal(ccRecords)
+
+	// 5. Upsert — replace existing archive for this entry if resubmitted
+	archive := models.EntryArchive{
+		EntryID:          entry.ID,
+		FlowID:           entry.FlowID,
+		Status:           finalStatus,
+		Title:            entry.Title,
+		FlowSnapshot:     string(flowJSON),
+		EntrySnapshot:    string(entryJSON),
+		FormDataSnapshot: string(formDataJSON),
+		ProcsSnapshot:    string(procsJSON),
+		CommentsSnapshot: string(commentsJSON),
+		CCSnapshot:       string(ccJSON),
+	}
+
+	var existing models.EntryArchive
+	query.Model(&models.EntryArchive{}).Where("entry_id = ?", entryID).First(&existing)
+	if existing.ID > 0 {
+		query.Model(&models.EntryArchive{}).Where("id = ?", existing.ID).Save(&archive)
+	} else {
+		query.Model(&models.EntryArchive{}).Create(&archive)
 	}
 }

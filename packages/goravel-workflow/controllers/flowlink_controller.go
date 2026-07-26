@@ -79,6 +79,7 @@ func (r *FlowlinkController) Update(ctx http.Context) http.Response {
 		}
 
 		//更新流程轨迹 flowlink表 type=Condition
+		// 仅在多条件分支（process_to 有2个及以上目标）时才创建 Condition 类型 flowlink
 		var old_process_ids []int
 		tx.Model(&models.Flowlink{}).Where("flow_id=?", flow.ID).Where("type=?", "Condition").Where("process_id=?", node.ID).
 			Pluck("next_process_id", &old_process_ids)
@@ -88,47 +89,35 @@ func (r *FlowlinkController) Update(ctx http.Context) http.Response {
 				tx.Rollback()
 				return httpfacades.NewResult(ctx).Error(http.StatusInternalServerError, "解析流程图数据错误", err.Error())
 			}
-			if !slicesEqual(p1, old_process_ids) {
-				adds := arrayDiff(p1, old_process_ids)
-				for _, add := range adds {
-					tx.Model(&models.Flowlink{}).Create(&models.Flowlink{
-						FlowID:        flow.ID,
-						Type:          "Condition",
-						ProcessID:     cast.ToUint(node.ID),
-						NextProcessID: add,
-						Sort:          100,
-					})
+			// 多条件分支（2个及以上目标）：创建/更新 Condition flowlink
+			if len(p1) > 1 {
+				if !slicesEqual(p1, old_process_ids) {
+					adds := arrayDiff(p1, old_process_ids)
+					for _, add := range adds {
+						tx.Model(&models.Flowlink{}).Create(&models.Flowlink{
+							FlowID:        flow.ID,
+							Type:          "Condition",
+							ProcessID:     cast.ToUint(node.ID),
+							NextProcessID: add,
+							Sort:          100,
+						})
+					}
+					dels := arrayDiff(old_process_ids, p1)
+					tx.Model(&models.Flowlink{}).Where("flow_id=?", flow.ID).Where("type=?", "Condition").
+						Where("process_id=?", node.ID).Where("next_process_id IN (?)", dels).Delete(&models.Flowlink{})
 				}
-				dels := arrayDiff(old_process_ids, p1)
-				tx.Model(&models.Flowlink{}).Where("flow_id=?", flow.ID).Where("type=?", "Condition").
-					Where("process_id=?", node.ID).Where("next_process_id IN (?)", dels).Delete(&models.Flowlink{})
+			} else {
+				// 0或1个目标：删除所有已存在的 Condition flowlink（当前节点为普通节点）
+				if len(old_process_ids) > 0 {
+					tx.Model(&models.Flowlink{}).Where("flow_id=?", flow.ID).Where("type=?", "Condition").
+						Where("process_id=?", node.ID).Delete(&models.Flowlink{})
+				}
 			}
 		} else {
-			if len(old_process_ids) > 1 {
-				newOldId := old_process_ids[0]
+			// ProcessTo 为空：删除所有已存在的 Condition flowlink（当前节点为普通/结束节点）
+			if len(old_process_ids) > 0 {
 				tx.Model(&models.Flowlink{}).Where("flow_id=?", flow.ID).Where("type=?", "Condition").
-					Where("process_id=?", node.ID).Where("next_process_id IN (?)", old_process_ids).Delete(&models.Flowlink{})
-				tx.Model(&models.Flowlink{}).Where("flow_id=?", flow.ID).Where("type=?", "Condition").
-					Where("process_id=?", newOldId).Update("next_process_id", -1)
-			} else {
-				fcount, err := tx.Model(&models.Flowlink{}).Where("flow_id=?", flow.ID).Where("type=?", "Condition").
-					Where("process_id=?", node.ID).Count()
-				if err != nil {
-					tx.Rollback()
-					return httpfacades.NewResult(ctx).Error(http.StatusInternalServerError, "查询失败", err)
-				}
-				if fcount > 0 {
-					tx.Model(&models.Flowlink{}).Where("flow_id=?", flow.ID).Where("type=?", "Condition").
-						Where("process_id=?", node.ID).Update("next_process_id", -1)
-				} else {
-					tx.Model(&models.Flowlink{}).Create(&models.Flowlink{
-						FlowID:        flow.ID,
-						Type:          "Condition",
-						ProcessID:     cast.ToUint(node.ID),
-						NextProcessID: -1,
-						Sort:          100,
-					})
-				}
+					Where("process_id=?", node.ID).Delete(&models.Flowlink{})
 			}
 		}
 

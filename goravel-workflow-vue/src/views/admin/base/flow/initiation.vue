@@ -1,17 +1,17 @@
 <template>
-    <div class="p-4">
-        <div class="mb-4">
-            <a-button type="link" @click="goBack">
+    <div class="p-2">
+        <div class="mb-2">
+            <a-button type="link" size="small" @click="goBack">
                 <ArrowLeftOutlined /> 返回
             </a-button>
         </div>
         <div class="flex justify-center">
-            <div class="w-full" style="max-width: 700px">
-                <a-card>
+            <div style="max-width: 700px; width: 100%">
+                <a-card size="small">
                     <template #title>
                         <div class="text-center">
-                            <span class="text-lg font-semibold">流程：{{ flow.flow_name }}</span>
-                            <a-tag v-if="flow.Template" color="blue" class="ml-2">
+                            <span class="text-base font-semibold">流程：{{ flow.flow_name }}</span>
+                            <a-tag v-if="flow.Template" color="blue" class="ml-1">
                                 {{ flow.Template.template_name }}
                             </a-tag>
                         </div>
@@ -46,7 +46,6 @@ const onSubmit = async (values) => {
     values.flow_id = +id
     try {
         huluFormRef.value.clearValidate()
-        console.log(values)
         await storeEntry(values)
     } catch (error) {
         huluFormRef.value.validate()
