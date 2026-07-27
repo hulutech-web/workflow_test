@@ -16,16 +16,21 @@ import (
 	"github.com/spf13/cast"
 )
 
+// FlowlinkController 流程连线控制器，负责管理流程节点之间的连线关系
 type FlowlinkController struct {
 	//Dependent services
+	// 依赖的服务
 }
 
+// NewFlowlinkController 创建 FlowlinkController 实例
 func NewFlowlinkController() *FlowlinkController {
 	return &FlowlinkController{
 		//Inject services
+		// 注入服务
 	}
 }
 
+// Update 更新流程图数据（jsPlumb 数据），同步更新流程节点位置、流转关系及条件分支
 func (r *FlowlinkController) Update(ctx http.Context) http.Response {
 	var flow models.Flow
 	err := ctx.Request().Bind(&flow)
@@ -36,6 +41,7 @@ func (r *FlowlinkController) Update(ctx http.Context) http.Response {
 		return httpfacades.NewResult(ctx).Error(http.StatusInternalServerError, "流程图数据为空", nil)
 	}
 	//解析流程图数据
+	// 解析 jsPlumb 流程图 JSON 数据
 	jsMap := common.Plumb{}
 	err = json.Unmarshal([]byte(flow.Jsplumb), &jsMap)
 	if err != nil {
@@ -43,14 +49,17 @@ func (r *FlowlinkController) Update(ctx http.Context) http.Response {
 	}
 	tx, _ := facades.Orm().Query().Begin()
 	//更新总数
+	// 更新流程节点总数
 	jsMap.Total = len(jsMap.List)
 	for _, node := range jsMap.List {
 		//	1-更新process
+		// 步骤1：更新 process（流程节点）
 		var process models.Process
 		tx.Model(&models.Process{}).Where("id=?", node.ID).Find(&process)
 		style := node.Style
 		process.Style = style
 		//"width:128px;height:30px;line-height:30px;color:#FF8C00;left:461px;top:84px;"使用一个正则匹配到left:461px;top:84px;
+		// 使用正则表达式从样式字符串中提取 left 和 top 位置信息
 		re := regexp.MustCompile(`left:(\d+)px;top:(\d+)px;`)
 		process.ProcessTo = node.ProcessTo
 		matches := re.FindStringSubmatch(style)
@@ -59,6 +68,7 @@ func (r *FlowlinkController) Update(ctx http.Context) http.Response {
 			leftValue := matches[1]
 			topValue := matches[2]
 			// 更新process的位置信息
+			// 更新 process 的位置信息
 			process.PositionLeft = fmt.Sprintf("%spx", leftValue)
 			process.PositionTop = fmt.Sprintf("%spx", topValue)
 		} else {
@@ -70,6 +80,7 @@ func (r *FlowlinkController) Update(ctx http.Context) http.Response {
 
 		// 更新默认 flowlink（Sys/Dept/Emp）的 NextProcessID
 		// process_to 第一个值作为默认下一步骤
+		// 取 process_to 中的第一个值作为默认的下一步骤 ID
 		var defaultNextID int
 		if node.ProcessTo != "" {
 			p1, err := parseCommaSeparatedInts(node.ProcessTo)
@@ -80,6 +91,8 @@ func (r *FlowlinkController) Update(ctx http.Context) http.Response {
 
 		//更新流程轨迹 flowlink表 type=Condition
 		// 仅在多条件分支（process_to 有2个及以上目标）时才创建 Condition 类型 flowlink
+		// 步骤2：更新流程流转轨迹（flowlink 表），处理条件分支（type=Condition）
+		// 仅在 process_to 包含 2 个及以上目标节点时，才创建 Condition 类型的 flowlink
 		var old_process_ids []int
 		tx.Model(&models.Flowlink{}).Where("flow_id=?", flow.ID).Where("type=?", "Condition").Where("process_id=?", node.ID).
 			Pluck("next_process_id", &old_process_ids)
@@ -90,8 +103,10 @@ func (r *FlowlinkController) Update(ctx http.Context) http.Response {
 				return httpfacades.NewResult(ctx).Error(http.StatusInternalServerError, "解析流程图数据错误", err.Error())
 			}
 			// 多条件分支（2个及以上目标）：创建/更新 Condition flowlink
+			// 多条件分支（2 个及以上目标节点）：创建或更新 Condition 类型的 flowlink
 			if len(p1) > 1 {
 				if !slicesEqual(p1, old_process_ids) {
+					// 计算需要新增的节点
 					adds := arrayDiff(p1, old_process_ids)
 					for _, add := range adds {
 						tx.Model(&models.Flowlink{}).Create(&models.Flowlink{
@@ -102,12 +117,14 @@ func (r *FlowlinkController) Update(ctx http.Context) http.Response {
 							Sort:          100,
 						})
 					}
+					// 计算需要删除的节点
 					dels := arrayDiff(old_process_ids, p1)
 					tx.Model(&models.Flowlink{}).Where("flow_id=?", flow.ID).Where("type=?", "Condition").
 						Where("process_id=?", node.ID).Where("next_process_id IN (?)", dels).Delete(&models.Flowlink{})
 				}
 			} else {
 				// 0或1个目标：删除所有已存在的 Condition flowlink（当前节点为普通节点）
+				// 0 或 1 个目标节点：删除所有已存在的 Condition flowlink（当前节点为普通节点）
 				if len(old_process_ids) > 0 {
 					tx.Model(&models.Flowlink{}).Where("flow_id=?", flow.ID).Where("type=?", "Condition").
 						Where("process_id=?", node.ID).Delete(&models.Flowlink{})
@@ -115,6 +132,7 @@ func (r *FlowlinkController) Update(ctx http.Context) http.Response {
 			}
 		} else {
 			// ProcessTo 为空：删除所有已存在的 Condition flowlink（当前节点为普通/结束节点）
+			// ProcessTo 为空：删除所有已存在的 Condition flowlink（当前节点为普通节点或结束节点）
 			if len(old_process_ids) > 0 {
 				tx.Model(&models.Flowlink{}).Where("flow_id=?", flow.ID).Where("type=?", "Condition").
 					Where("process_id=?", node.ID).Delete(&models.Flowlink{})
@@ -122,18 +140,37 @@ func (r *FlowlinkController) Update(ctx http.Context) http.Response {
 		}
 
 		// 更新默认类型（非Condition）flowlink 的 NextProcessID
+		// 步骤3：更新默认类型（非 Condition）flowlink 的 NextProcessID
 		if defaultNextID > 0 {
-			// 优先更新已有的 Sys/Dept/Emp flowlink
+			// 查是否已有非Condition类型的flowlink
+			// 查询是否已存在非 Condition 类型的 flowlink
+			var existing models.Flowlink
 			tx.Model(&models.Flowlink{}).Where("flow_id=?", flow.ID).Where("process_id=?", node.ID).
-				Where("type!=?", "Condition").Update("next_process_id", defaultNextID)
+				Where("type!=?", "Condition").First(&existing)
+			if existing.ID > 0 {
+				// 已存在则更新 NextProcessID
+				tx.Model(&models.Flowlink{}).Where("id=?", existing.ID).Update("next_process_id", defaultNextID)
+			} else {
+				// 不存在则创建新的默认 flowlink，类型为 Emp
+				tx.Model(&models.Flowlink{}).Create(&models.Flowlink{
+					FlowID:        flow.ID,
+					ProcessID:     cast.ToUint(node.ID),
+					NextProcessID: defaultNextID,
+					Type:          "Emp",
+					Sort:          100,
+				})
+			}
 		}
 	}
+	// 更新流程图 jsplumb 字段
 	tx.Model(&models.Flow{}).Where("id=?", flow.ID).Update("jsplumb", flow.Jsplumb)
+	// 更新流程状态为未发布（修改流程图后需要重新发布）
 	tx.Model(&models.Flow{}).Where("id=?", flow.ID).Update("is_publish", false)
 	tx.Commit()
 	return httpfacades.NewResult(ctx).Success("保存成功", nil)
 }
 
+// slicesEqual 判断两个整数切片是否相等（忽略顺序，排序后比较）
 func slicesEqual(a, b []int) bool {
 	sort.Ints(a)
 	sort.Ints(b)
@@ -148,6 +185,7 @@ func slicesEqual(a, b []int) bool {
 	return true
 }
 
+// parseCommaSeparatedInts 将逗号分隔的字符串解析为整数切片
 // 并返回一个整数切片。
 func parseCommaSeparatedInts(s string) ([]int, error) {
 	// 先去除字符串中的空白字符
@@ -178,17 +216,20 @@ func parseCommaSeparatedInts(s string) ([]int, error) {
 	return nums, nil
 }
 
+// arrayDiff 取两个整数切片的差集，返回在 slice1 中但不在 slice2 中的元素
 // arrayDiff 接受两个整数切片，返回一个新的切片，包含所有在第一个切片中但不在第二个切片中的元素。
 func arrayDiff(slice1, slice2 []int) []int {
 	diff := make([]int, 0)
 
 	// 创建一个映射来存储第二个切片中的元素
+	// 创建一个 map 存储 slice2 中的元素，用于快速查找
 	elementMap := make(map[int]bool)
 	for _, elem := range slice2 {
 		elementMap[elem] = true
 	}
 
 	// 遍历第一个切片
+	// 遍历 slice1，找出不在 slice2 中的元素
 	for _, elem := range slice1 {
 		// 如果元素不在第二个切片中，则添加到结果切片
 		if !elementMap[elem] {

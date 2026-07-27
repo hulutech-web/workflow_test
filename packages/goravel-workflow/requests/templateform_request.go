@@ -9,6 +9,7 @@ import (
 	"github.com/spf13/cast"
 )
 
+// TemplateformRequest 表单模板字段请求结构体，用于验证表单模板字段的增改操作
 type TemplateformRequest struct {
 	ID                uint              `json:"id" form:"-"`
 	Field             string            `json:"field" form:"field"`
@@ -21,19 +22,22 @@ type TemplateformRequest struct {
 	TemplateID        uint              `json:"template_id" form:"template_id"`
 }
 
+// Authorize 授权验证，所有请求均允许通过
 func (r *TemplateformRequest) Authorize(ctx http.Context) error {
 	return nil
 }
 
+// Rules 定义请求参数的验证规则
 func (r *TemplateformRequest) Rules(ctx http.Context) map[string]any {
 	return map[string]any{
-		"template_id": "required",
-		"field":       "required",
-		"field_name":  "required",
-		"field_type":  "required",
+		"template_id": "required", // 模板ID必填
+		"field":       "required", // 表单字段英文名必填
+		"field_name":  "required", // 表单字段中文名必填
+		"field_type":  "required", // 表单字段类型必填
 	}
 }
 
+// Messages 定义验证失败时的自定义错误消息
 func (r *TemplateformRequest) Messages(ctx http.Context) map[string]string {
 	return map[string]string{
 		"template_id.required": "模板ID不能为空",
@@ -43,6 +47,7 @@ func (r *TemplateformRequest) Messages(ctx http.Context) map[string]string {
 	}
 }
 
+// Attributes 定义请求参数的属性名称，用于错误消息中的字段标识
 func (r *TemplateformRequest) Attributes(ctx http.Context) map[string]string {
 	return map[string]string{
 		"template_id":         "模板ID",
@@ -56,14 +61,19 @@ func (r *TemplateformRequest) Attributes(ctx http.Context) map[string]string {
 	}
 }
 
+// PrepareForValidation 验证前的数据预处理，将请求数据转换为目标类型
 func (r *TemplateformRequest) PrepareForValidation(ctx http.Context, data validation.Data) error {
+	// 将 sort 字段从字符串转换为整数类型
 	if name, exist := data.Get("sort"); exist {
 		data.Set("sort", cast.ToInt(name))
 	}
+	// 将 field_rules 字段从原始数据转换为 Rule 结构体类型
 	if val, exist := data.Get("field_rules"); exist {
 		//将val转换为Rule类型
+		// Chinese translation: 将原始值转换为 Rule 类型
 		r.FieldRules = common.Rule{}
 		//	使用mapstruct将json字符串转换为Rule类型
+		// Chinese translation: 使用 mapstructure 将 JSON 字符串解析为 Rule 结构体
 		if err := mapstructure.Decode(val, &r.FieldRules); err != nil {
 			return err
 		}

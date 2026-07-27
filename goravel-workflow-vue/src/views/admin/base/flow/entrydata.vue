@@ -76,19 +76,30 @@
                     </a-timeline>
                 </a-card>
 
+                <!-- Child Workflow Approval Timelines (recursive) -->
+                <template v-if="children.length > 0">
+                    <ChildApprovalCard
+                        v-for="child in children"
+                        :key="child.entry?.id || child.entry?.ID"
+                        :child-data="child"
+                    />
+                </template>
+
+                <!-- CC Records -->
+                <a-card v-if="ccRecords.length > 0" size="small" title="抄送记录" class="mb-3">
+                    <a-tag v-for="cc in ccRecords" :key="cc.id" class="mr-2 mb-1" :color="cc.status == 1 ? 'green' : 'blue'">
+                        {{ cc.emp_name }}
+                        <span class="ml-1 text-xs opacity-70">({{ cc.status == 1 ? '已读' : '未读' }})</span>
+                    </a-tag>
+                </a-card>
+
                 <!-- Comments -->
                 <a-card v-if="comments.length > 0" size="small" title="评论记录" class="mb-3">
-                    <a-list item-layout="horizontal" :data-source="comments" size="small">
-                        <template #renderItem="{ item }">
-                            <a-list-item>
-                                <a-list-item-meta>
-                                    <template #title>{{ item.emp_name }}</template>
-                                    <template #description>{{ item.created_at }}</template>
-                                </a-list-item-meta>
-                                <span>{{ item.content }}</span>
-                            </a-list-item>
-                        </template>
-                    </a-list>
+                    <CommentThread
+                        :comments="comments"
+                        :entry-id="entry.id"
+                        :is-readonly="true"
+                    />
                 </a-card>
 
                 <!-- Empty state when no data loaded yet -->
@@ -101,6 +112,8 @@
 <script setup lang='ts'>
 import { message } from 'ant-design-vue'
 import Form from '@/components/form/index.vue'
+import ChildApprovalCard from "@/views/admin/base/flow/ChildApprovalCard.vue";
+import CommentThread from '@/components/comment/CommentThread.vue';
 
 const { showEntry, updateEntry } = useEntry()
 const route = useRoute()
@@ -115,6 +128,8 @@ const entryDatas = ref<any[]>([])
 const fillFields = ref<any[]>([])
 const procs = ref<any[]>([])
 const comments = ref<any[]>([])
+const ccRecords = ref<any[]>([])
+const children = ref<any[]>([])
 
 const flowName = computed(() => {
     return entry.value?.Flow?.flow_name || entry.value?.flow?.flow_name || '-'
@@ -147,6 +162,8 @@ const init = async () => {
             fillFields.value = data.entry.Flow?.Template?.TemplateForms || []
             procs.value = data.entry.Procs || []
             comments.value = data.comments || []
+            ccRecords.value = data.cc_records || []
+            children.value = data.children || []
         } else {
             // Old format: entry object directly
             entry.value = data
@@ -154,6 +171,7 @@ const init = async () => {
             fillFields.value = data.Flow?.Template?.TemplateForms || []
             procs.value = data.Procs || []
             comments.value = []
+            ccRecords.value = data.cc_records || []
         }
 
         // Populate form state for edit mode

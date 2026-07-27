@@ -12,6 +12,7 @@ require (
 	github.com/goravel/postgres v1.18.0
 	github.com/hulutech-web/http_result v1.0.59
 	github.com/mitchellh/mapstructure v1.5.0
+	github.com/sirupsen/logrus v1.9.3
 	github.com/spf13/cast v1.10.0
 	github.com/stretchr/testify v1.11.1
 	github.com/wenlng/go-captcha-assets v1.0.7

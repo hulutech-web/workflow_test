@@ -23,13 +23,7 @@ function fetch(value: string, callback: any) {
 
   const fake = async () => {
     const data = await searchEmp(value)
-    const resultData = data.map(item=>{
-      return {
-        label:item.name,
-        value:item.ID
-      }
-    })
-    callback(resultData);
+    callback(data.data);
   }
 
   timeout = setTimeout(fake, 300);
@@ -50,6 +44,6 @@ const handleSearch = (val: string) => {
 
 const handleChange = (val: string) => {
   console.log("handleChange",val)
-  emit('update:modelValue', val)
+  emit('update:modelValue', val+"")
 };
 </script>

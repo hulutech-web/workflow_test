@@ -72,7 +72,7 @@
           <template #tab>
             <span>
               待办事项
-              <a-badge :count="state.cc_list.length">
+              <a-badge :count="state.procs.length">
               </a-badge>
             </span>
           </template>
@@ -218,6 +218,9 @@
                   <a-badge v-if="row.status == 1" status="success" text="已读"/>
                 </vxe-column>
                 <vxe-column field="created_at" title="抄送时间"></vxe-column>
+                <vxe-column field="action" title="操作" #default="{ row }">
+                  <a-button size="small" @click="toCcDetail(row)">明细</a-button>
+                </vxe-column>
               </vxe-table>
             </div>
           </div>
@@ -325,6 +328,11 @@ const editEntry = (row) => {
   router.push({path: `/admin/base/flow/${row.flow_id}/entry/${row.id}`})
 }
 
+const toCcDetail = (row: any) => {
+  const entryId = row.entry_id
+  const flowId = row.flow_id
+  router.push({ path: `/admin/base/flow/${flowId}/entry/${entryId}` })
+}
 const revokeEntryFn = async (row) => {
   await revokeEntry(row.id)
   await init()

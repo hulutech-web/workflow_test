@@ -46,6 +46,7 @@
                                 <a-button size="small" @click="showAddSign">加签</a-button>
                                 <a-button size="small" @click="showTransfer">转交</a-button>
                                 <a-button size="small" @click="showComment">评论</a-button>
+                                <a-button size="small" @click="showCc">抄送</a-button>
                             </a-space>
                         </div>
                     </a-card>
@@ -53,19 +54,12 @@
 
                 <!-- Comment thread -->
                 <a-card v-if="comments.length > 0" title="评论记录" class="mt-2" size="small">
-                    <a-list item-layout="horizontal" :data-source="comments" size="small">
-                        <template #renderItem="{ item }">
-                            <a-list-item>
-                                <a-list-item-meta>
-                                    <template #title>{{ item.emp_name || '未知用户' }}</template>
-                                    <template #description>{{ item.created_at }}</template>
-                                </a-list-item-meta>
-                                <template #actions>
-                                    <span>{{ item.content }}</span>
-                                </template>
-                            </a-list-item>
-                        </template>
-                    </a-list>
+                    <CommentThread
+                        :comments="comments"
+                        :entry-id="entry_id"
+                        :proc-id="proc_id"
+                        @comment-added="loadComments"
+                    />
                 </a-card>
             </div>
         </div>
@@ -118,15 +112,37 @@
                 </a-form-item>
             </a-form>
         </a-modal>
+
+        <!-- CC Modal -->
+        <a-modal v-model:open="ccOpen" title="抄送" centered size="small" @ok="handleCc">
+            <a-form layout="vertical" size="small">
+                <a-form-item label="抄送人">
+                    <a-select
+                        v-model:value="ccEmpIds"
+                        mode="multiple"
+                        placeholder="选择抄送人"
+                        style="width:100%"
+                        size="small"
+                    >
+                        <a-select-option v-for="e in allEmps" :key="e.id" :value="e.id">
+                            {{ e.name }}
+                        </a-select-option>
+                    </a-select>
+                </a-form-item>
+            </a-form>
+        </a-modal>
     </div>
 </template>
 
 <script setup lang='ts'>
 import { message } from 'ant-design-vue';
 import EmpSearch from '@/components/empsearch/index.vue';
+import CommentThread from '@/components/comment/CommentThread.vue';
 
 const { loadFlowEntryConfig, getEntryData } = useEntry();
 const { setPass, setUnPass, addSign, transferProc, addComment, getComments, getRejectableProcesses } = useProc();
+const { addCc } = useCc();
+const { getEmpOpt } = useEmp();
 const route = useRoute();
 const router = useRouter()
 const goBack = () => router.back()
@@ -141,6 +157,7 @@ const fillFields = ref([]);
 const flow = ref({})
 const entry = ref({})
 const comments = ref<any[]>([])
+const allEmps = ref<any[]>([])
 const formState = ref({ content: '' })
 
 const init = async () => {
@@ -152,6 +169,13 @@ const init = async () => {
     if (entry_id) {
         await loadEntryDatas()
         await loadComments()
+    }
+    // Load all employees for CC picker
+    try {
+        const { data } = await getEmpOpt()
+        allEmps.value = (data || []).map((e: any) => ({ id: e.id || e.ID, name: e.name }))
+    } catch (e) {
+        // ignore
     }
 }
 
@@ -300,6 +324,27 @@ const handleUnpassTo = async () => {
         })
         unpassToOpen.value = false
         history.back()
+    } catch (e) {
+        // error handled by interceptor
+    }
+}
+
+// CC (抄送)
+const ccOpen = ref(false)
+const ccEmpIds = ref<number[]>([])
+const showCc = () => { ccOpen.value = true; ccEmpIds.value = [] }
+const handleCc = async () => {
+    if (!ccEmpIds.value.length) {
+        message.warning('请选择抄送人')
+        return
+    }
+    try {
+        await addCc({
+            entry_id: entry_id,
+            emp_ids: ccEmpIds.value.join(','),
+        })
+        ccOpen.value = false
+        message.success('抄送成功')
     } catch (e) {
         // error handled by interceptor
     }

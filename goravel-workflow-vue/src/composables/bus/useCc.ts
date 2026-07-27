@@ -16,6 +16,14 @@ export default () => {
     });
   };
 
+  const addCc = async (data) => {
+    return await http.request({
+      url: `cc`,
+      method: "POST",
+      data: data,
+    });
+  };
+
   const gridOptions = reactive<VxeGridProps<RowVO>>({
     border: "full",
     // size: "small",
@@ -234,6 +242,7 @@ export default () => {
   return {
     getCcList,
     getEntryCc,
+    addCc,
     gridOptions
   };
 };

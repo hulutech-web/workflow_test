@@ -55,8 +55,8 @@
 
         <!--          转入子流程-->
 
-        <div v-if="formState.next_process">
-          <div id="child_flow" v-if="formState.process.position == 2">
+        <div v-if="submitState.process_position == 2 || formState.process.position == 2">
+          <div id="child_flow">
             <div class="control-group">
               <a-form-item label="子流程">
                 <a-select v-model:value="submitState.child_flow_id" :value="formState.process.child_flow_id">
@@ -127,9 +127,6 @@
                   <a-select-option value="-1003">
                     表单字段指定
                   </a-select-option>
-                  <a-select-option value="-1004">
-                    动态表达式
-                  </a-select-option>
                 </a-select>
               </a-form-item>
               <!-- 并发模式 -->
@@ -141,18 +138,16 @@
                 </a-select>
               </a-form-item>
               <!-- 表单字段指定审批人 -->
-              <a-form-item label="表单字段" v-if="submitState.auto_person === '-1003'">
+              <a-form-item label="审批人字段" v-if="submitState.auto_person === '-1003'">
                 <a-select v-model:value="submitState.approver_rule" style="width:400px;"
-                          placeholder="选择包含审批人ID的表单字段">
+                          placeholder="选择表单中用于指定审批人的字段">
                   <a-select-option :value="f.field" v-for="(f, ind) in formState.fields" :key="ind">
-                    {{ f.field_name }}
+                    {{ f.field_name }}（{{ f.field }}）
                   </a-select-option>
                 </a-select>
-              </a-form-item>
-              <!-- 动态表达式映射键 -->
-              <a-form-item label="表达式映射键" v-if="submitState.auto_person === '-1004'">
-                <a-input v-model:value="submitState.approver_rule" placeholder="如: director, manager, 或员工ID"
-                         style="width:400px;"/>
+                <div class="text-gray-400 text-xs mt-1">
+                  发起人提交表单时，所选字段的值将作为本步骤的审批人 ID
+                </div>
               </a-form-item>
             </div>
           </p>
@@ -594,9 +589,6 @@ export default {
       const payload = {...submitState.value}
       if (payload.cc_emp_ids && payload.cc_emp_ids.length > 0) {
         payload.cc_emp_ids = payload.cc_emp_ids.join(',')
-        // 同时准备名称数组用于回显
-        const empMap = new Map()
-        // 这里需要从员工列表构建映射，简化处理：只传ID字符串
       } else {
         payload.cc_emp_ids = ""
       }
@@ -655,7 +647,7 @@ export default {
       if (val == '-1000' || val == '-1001' || val == '-1002') {
         disableAuto.value = true
       }
-      if (val == '-1003' || val == '-1004') {
+      if (val == '-1003') {
         disableAuto.value = true
       }
       if (val == "0") {

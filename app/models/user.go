@@ -2,6 +2,7 @@ package models
 
 import (
 	"goravel/database/factories"
+	"goravel/packages/goravel-workflow/services/workflow"
 
 	"github.com/goravel/framework/contracts/database/factory"
 	"github.com/goravel/framework/database/orm"
@@ -26,8 +27,29 @@ type User struct {
 	LastLogin    *carbon.DateTime `gorm:"column:last_login" form:"last_login" json:"last_login"`
 	Status       string           `gorm:"column:status;default:null" form:"status" json:"status"`
 	Roles        []Role           `gorm:"many2many:user_roles;"`
+
+	Workflow *workflow.Workflow
 }
 
+// 通知发起人，在被驳回时调用，或者整个流程结束时调用。
+func (u *User) NotifySendOne(id uint) error {
+
+	//logrus.WithFields(logrus.Fields{
+	//	"id": id,
+	//}).Info("NotifySendOne通知来咯")
+	facades.Log().Infof("NotifySendOne通知来咯%d", id)
+
+	return nil
+}
+
+// 通知下一个审批人，当当前环节的审批人通过时，触发。
+func (u *User) NotifyNextAuditor(id uint) error {
+	//logrus.WithFields(logrus.Fields{
+	//	"id": id,
+	//}).Info("NotifyNextAuditor通知来咯")
+	facades.Log().Infof("NotifyNextAuditor通知来咯%d", id)
+	return nil
+}
 func (u *User) Factory() factory.Factory {
 	return &factories.UserFactory{}
 }
