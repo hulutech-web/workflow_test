@@ -9139,3 +9139,123 @@
 [Context] map[trace.traceContextKeyType:{Span:<nil> sc:{traceID:[0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0] spanID:[0 0 0 0 0 0 0 0] traceFlags:0 traceState:{list:[]} remote:false}}]
 [2026-07-27 04:42:15.679] local.info: [0.456ms] [rows:0] SELECT * FROM `flowlinks` WHERE process_id = 28 AND flow_id=7 AND type='Dept'
 [Context] map[trace.traceContextKeyType:{Span:<nil> sc:{traceID:[0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0] spanID:[0 0 0 0 0 0 0 0] traceFlags:0 traceState:{list:[]} remote:false}}]
+[2026-07-27 04:47:10.054] local.info: [0.780ms] [rows:1] SELECT count(*) FROM `flows`
+[Context] map[trace.traceContextKeyType:{Span:<nil> sc:{traceID:[0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0] spanID:[0 0 0 0 0 0 0 0] traceFlags:0 traceState:{list:[]} remote:false}}]
+[2026-07-27 04:47:10.055] local.info: [1.032ms] [rows:7] SELECT * FROM `flows` LIMIT 10
+[Context] map[trace.traceContextKeyType:{Span:<nil> sc:{traceID:[0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0] spanID:[0 0 0 0 0 0 0 0] traceFlags:0 traceState:{list:[]} remote:false}}]
+[2026-07-27 04:47:13.309] local.info: [0.620ms] [rows:1] SELECT * FROM `templateforms` WHERE `templateforms`.`template_id` = 7
+[Context] map[trace.traceContextKeyType:{Span:<nil> sc:{traceID:[0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0] spanID:[0 0 0 0 0 0 0 0] traceFlags:0 traceState:{list:[]} remote:false}}]
+[2026-07-27 04:47:13.309] local.info: [1.253ms] [rows:1] SELECT * FROM `templates` WHERE `templates`.`id` = 7
+[Context] map[trace.traceContextKeyType:{Span:<nil> sc:{traceID:[0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0] spanID:[0 0 0 0 0 0 0 0] traceFlags:0 traceState:{list:[]} remote:false}}]
+[2026-07-27 04:47:13.309] local.info: [2.068ms] [rows:1] SELECT * FROM `flows` WHERE `id` = 7
+[Context] map[trace.traceContextKeyType:{Span:<nil> sc:{traceID:[0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0] spanID:[0 0 0 0 0 0 0 0] traceFlags:0 traceState:{list:[]} remote:false}}]
+[2026-07-27 04:47:17.492] local.info: [2.431ms] [rows:1] SELECT count(*) FROM `flows`
+[Context] map[trace.traceContextKeyType:{Span:<nil> sc:{traceID:[0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0] spanID:[0 0 0 0 0 0 0 0] traceFlags:0 traceState:{list:[]} remote:false}}]
+[2026-07-27 04:47:17.497] local.info: [4.034ms] [rows:7] SELECT * FROM `flows` LIMIT 10
+[Context] map[trace.traceContextKeyType:{Span:<nil> sc:{traceID:[0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0] spanID:[0 0 0 0 0 0 0 0] traceFlags:0 traceState:{list:[]} remote:false}}]
+[2026-07-27 04:47:19.15] local.info: [0.456ms] [rows:1] SELECT * FROM `processvars` WHERE `processvars`.`flow_id` = 7
+[Context] map[trace.traceContextKeyType:{Span:<nil> sc:{traceID:[0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0] spanID:[0 0 0 0 0 0 0 0] traceFlags:0 traceState:{list:[]} remote:false}}]
+[2026-07-27 04:47:19.151] local.info: [0.637ms] [rows:6] SELECT * FROM `processes` WHERE `processes`.`flow_id` = 7
+[Context] map[trace.traceContextKeyType:{Span:<nil> sc:{traceID:[0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0] spanID:[0 0 0 0 0 0 0 0] traceFlags:0 traceState:{list:[]} remote:false}}]
+[2026-07-27 04:47:19.151] local.info: [2.206ms] [rows:1] SELECT * FROM `flows` WHERE id=7
+[Context] map[trace.traceContextKeyType:{Span:<nil> sc:{traceID:[0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0] spanID:[0 0 0 0 0 0 0 0] traceFlags:0 traceState:{list:[]} remote:false}}]
+[2026-07-27 04:47:21.552] local.info: [0.776ms] [rows:1] SELECT * FROM `processes` WHERE id=28
+[Context] map[trace.traceContextKeyType:{Span:<nil> sc:{traceID:[0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0] spanID:[0 0 0 0 0 0 0 0] traceFlags:0 traceState:{list:[]} remote:false}}]
+[2026-07-27 04:47:21.554] local.info: [0.619ms] [rows:3] SELECT * FROM `processes` WHERE `processes`.`id` IN (29,30,31)
+[Context] map[trace.traceContextKeyType:{Span:<nil> sc:{traceID:[0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0] spanID:[0 0 0 0 0 0 0 0] traceFlags:0 traceState:{list:[]} remote:false}}]
+[2026-07-27 04:47:21.554] local.info: [0.399ms] [rows:1] SELECT * FROM `processes` WHERE `processes`.`id` = 28
+[Context] map[trace.traceContextKeyType:{Span:<nil> sc:{traceID:[0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0] spanID:[0 0 0 0 0 0 0 0] traceFlags:0 traceState:{list:[]} remote:false}}]
+[2026-07-27 04:47:21.554] local.info: [1.866ms] [rows:3] SELECT * FROM `flowlinks` WHERE process_id=28 AND flow_id=7
+[Context] map[trace.traceContextKeyType:{Span:<nil> sc:{traceID:[0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0] spanID:[0 0 0 0 0 0 0 0] traceFlags:0 traceState:{list:[]} remote:false}}]
+[2026-07-27 04:47:21.555] local.info: [0.335ms] [rows:3] SELECT `next_process_id` FROM `flowlinks` WHERE process_id=28 AND flow_id=7
+[Context] map[trace.traceContextKeyType:{Span:<nil> sc:{traceID:[0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0] spanID:[0 0 0 0 0 0 0 0] traceFlags:0 traceState:{list:[]} remote:false}}]
+[2026-07-27 04:47:21.556] local.info: [0.568ms] [rows:1] SELECT * FROM `processes` WHERE `processes`.`id` = 33
+[Context] map[trace.traceContextKeyType:{Span:<nil> sc:{traceID:[0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0] spanID:[0 0 0 0 0 0 0 0] traceFlags:0 traceState:{list:[]} remote:false}}]
+[2026-07-27 04:47:21.557] local.info: [0.396ms] [rows:1] SELECT * FROM `processes` WHERE `processes`.`id` = 32
+[Context] map[trace.traceContextKeyType:{Span:<nil> sc:{traceID:[0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0] spanID:[0 0 0 0 0 0 0 0] traceFlags:0 traceState:{list:[]} remote:false}}]
+[2026-07-27 04:47:21.557] local.info: [1.765ms] [rows:1] SELECT * FROM `flowlinks` WHERE flow_id=7 AND type != 'Condition' AND process_id not in (29,30,31) AND next_process_id > 0
+[Context] map[trace.traceContextKeyType:{Span:<nil> sc:{traceID:[0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0] spanID:[0 0 0 0 0 0 0 0] traceFlags:0 traceState:{list:[]} remote:false}}]
+[2026-07-27 04:47:21.558] local.info: [0.358ms] [rows:1] SELECT * FROM `templates` WHERE `templates`.`id` = 7
+[Context] map[trace.traceContextKeyType:{Span:<nil> sc:{traceID:[0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0] spanID:[0 0 0 0 0 0 0 0] traceFlags:0 traceState:{list:[]} remote:false}}]
+[2026-07-27 04:47:21.558] local.info: [0.878ms] [rows:1] SELECT * FROM `flows` WHERE id=7
+[Context] map[trace.traceContextKeyType:{Span:<nil> sc:{traceID:[0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0] spanID:[0 0 0 0 0 0 0 0] traceFlags:0 traceState:{list:[]} remote:false}}]
+[2026-07-27 04:47:21.558] local.info: [0.402ms] [rows:1] SELECT * FROM `templateforms` WHERE template_id=7
+[Context] map[trace.traceContextKeyType:{Span:<nil> sc:{traceID:[0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0] spanID:[0 0 0 0 0 0 0 0] traceFlags:0 traceState:{list:[]} remote:false}}]
+[2026-07-27 04:47:21.559] local.info: [0.319ms] [rows:0] SELECT `auditor` FROM `flowlinks` WHERE process_id=28 AND type='Emp'
+[Context] map[trace.traceContextKeyType:{Span:<nil> sc:{traceID:[0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0] spanID:[0 0 0 0 0 0 0 0] traceFlags:0 traceState:{list:[]} remote:false}}]
+[2026-07-27 04:47:21.559] local.info: [0.327ms] [rows:0] SELECT * FROM `emps` WHERE id in ('')
+[Context] map[trace.traceContextKeyType:{Span:<nil> sc:{traceID:[0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0] spanID:[0 0 0 0 0 0 0 0] traceFlags:0 traceState:{list:[]} remote:false}}]
+[2026-07-27 04:47:21.559] local.info: [0.398ms] [rows:0] SELECT * FROM `flowlinks` WHERE process_id = 28 AND flow_id=7 AND type='Sys'
+[Context] map[trace.traceContextKeyType:{Span:<nil> sc:{traceID:[0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0] spanID:[0 0 0 0 0 0 0 0] traceFlags:0 traceState:{list:[]} remote:false}}]
+[2026-07-27 04:47:21.56] local.info: [0.328ms] [rows:0] SELECT `auditor` FROM `flowlinks` WHERE type='Dept' AND process_id=28
+[Context] map[trace.traceContextKeyType:{Span:<nil> sc:{traceID:[0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0] spanID:[0 0 0 0 0 0 0 0] traceFlags:0 traceState:{list:[]} remote:false}}]
+[2026-07-27 04:47:21.561] local.info: [0.537ms] [rows:0] SELECT * FROM `depts` WHERE id in ('')
+[Context] map[trace.traceContextKeyType:{Span:<nil> sc:{traceID:[0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0] spanID:[0 0 0 0 0 0 0 0] traceFlags:0 traceState:{list:[]} remote:false}}]
+[2026-07-27 04:47:21.561] local.info: [0.603ms] [rows:6] SELECT * FROM `flows` WHERE is_publish=1 AND id!=7
+[Context] map[trace.traceContextKeyType:{Span:<nil> sc:{traceID:[0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0] spanID:[0 0 0 0 0 0 0 0] traceFlags:0 traceState:{list:[]} remote:false}}]
+[2026-07-27 04:47:21.562] local.info: [0.442ms] [rows:6] SELECT * FROM `processes` WHERE flow_id=7
+[Context] map[trace.traceContextKeyType:{Span:<nil> sc:{traceID:[0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0] spanID:[0 0 0 0 0 0 0 0] traceFlags:0 traceState:{list:[]} remote:false}}]
+[2026-07-27 04:47:21.562] local.info: [0.277ms] [rows:0] SELECT * FROM `flowlinks` WHERE process_id = 28 AND flow_id=7 AND type='Emp'
+[Context] map[trace.traceContextKeyType:{Span:<nil> sc:{traceID:[0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0] spanID:[0 0 0 0 0 0 0 0] traceFlags:0 traceState:{list:[]} remote:false}}]
+[2026-07-27 04:47:21.562] local.info: [0.250ms] [rows:0] SELECT * FROM `flowlinks` WHERE process_id = 28 AND flow_id=7 AND type='Dept'
+[Context] map[trace.traceContextKeyType:{Span:<nil> sc:{traceID:[0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0] spanID:[0 0 0 0 0 0 0 0] traceFlags:0 traceState:{list:[]} remote:false}}]
+[2026-07-27 04:47:31.214] local.info: [0.778ms] [rows:1] SELECT count(*) FROM `flows`
+[Context] map[trace.traceContextKeyType:{Span:<nil> sc:{traceID:[0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0] spanID:[0 0 0 0 0 0 0 0] traceFlags:0 traceState:{list:[]} remote:false}}]
+[2026-07-27 04:47:31.215] local.info: [0.933ms] [rows:7] SELECT * FROM `flows` LIMIT 10
+[Context] map[trace.traceContextKeyType:{Span:<nil> sc:{traceID:[0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0] spanID:[0 0 0 0 0 0 0 0] traceFlags:0 traceState:{list:[]} remote:false}}]
+[2026-07-27 04:47:35.082] local.info: [0.816ms] [rows:1] SELECT * FROM `templateforms` WHERE `templateforms`.`template_id` = 7
+[Context] map[trace.traceContextKeyType:{Span:<nil> sc:{traceID:[0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0] spanID:[0 0 0 0 0 0 0 0] traceFlags:0 traceState:{list:[]} remote:false}}]
+[2026-07-27 04:47:35.083] local.info: [2.734ms] [rows:1] SELECT * FROM `templates` WHERE `templates`.`id` = 7
+[Context] map[trace.traceContextKeyType:{Span:<nil> sc:{traceID:[0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0] spanID:[0 0 0 0 0 0 0 0] traceFlags:0 traceState:{list:[]} remote:false}}]
+[2026-07-27 04:47:35.083] local.info: [4.526ms] [rows:1] SELECT * FROM `flows` WHERE `id` = 7
+[Context] map[trace.traceContextKeyType:{Span:<nil> sc:{traceID:[0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0] spanID:[0 0 0 0 0 0 0 0] traceFlags:0 traceState:{list:[]} remote:false}}]
+[2026-07-27 04:47:36.49] local.info: [1.558ms] [rows:1] SELECT count(*) FROM `flows`
+[Context] map[trace.traceContextKeyType:{Span:<nil> sc:{traceID:[0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0] spanID:[0 0 0 0 0 0 0 0] traceFlags:0 traceState:{list:[]} remote:false}}]
+[2026-07-27 04:47:36.491] local.info: [0.948ms] [rows:7] SELECT * FROM `flows` LIMIT 10
+[Context] map[trace.traceContextKeyType:{Span:<nil> sc:{traceID:[0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0] spanID:[0 0 0 0 0 0 0 0] traceFlags:0 traceState:{list:[]} remote:false}}]
+[2026-07-27 04:47:38.044] local.info: [0.500ms] [rows:1] SELECT * FROM `processvars` WHERE `processvars`.`flow_id` = 7
+[Context] map[trace.traceContextKeyType:{Span:<nil> sc:{traceID:[0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0] spanID:[0 0 0 0 0 0 0 0] traceFlags:0 traceState:{list:[]} remote:false}}]
+[2026-07-27 04:47:38.045] local.info: [0.727ms] [rows:6] SELECT * FROM `processes` WHERE `processes`.`flow_id` = 7
+[Context] map[trace.traceContextKeyType:{Span:<nil> sc:{traceID:[0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0] spanID:[0 0 0 0 0 0 0 0] traceFlags:0 traceState:{list:[]} remote:false}}]
+[2026-07-27 04:47:38.045] local.info: [2.386ms] [rows:1] SELECT * FROM `flows` WHERE id=7
+[Context] map[trace.traceContextKeyType:{Span:<nil> sc:{traceID:[0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0] spanID:[0 0 0 0 0 0 0 0] traceFlags:0 traceState:{list:[]} remote:false}}]
+[2026-07-27 04:54:12.953] local.info: [1.219ms] [rows:1] SELECT * FROM `processes` WHERE id=29
+[Context] map[trace.traceContextKeyType:{Span:<nil> sc:{traceID:[0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0] spanID:[0 0 0 0 0 0 0 0] traceFlags:0 traceState:{list:[]} remote:false}}]
+[2026-07-27 04:54:12.955] local.info: [0.904ms] [rows:1] SELECT * FROM `processes` WHERE `processes`.`id` = 32
+[Context] map[trace.traceContextKeyType:{Span:<nil> sc:{traceID:[0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0] spanID:[0 0 0 0 0 0 0 0] traceFlags:0 traceState:{list:[]} remote:false}}]
+[2026-07-27 04:54:12.956] local.info: [0.440ms] [rows:1] SELECT * FROM `processes` WHERE `processes`.`id` = 29
+[Context] map[trace.traceContextKeyType:{Span:<nil> sc:{traceID:[0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0] spanID:[0 0 0 0 0 0 0 0] traceFlags:0 traceState:{list:[]} remote:false}}]
+[2026-07-27 04:54:12.956] local.info: [2.515ms] [rows:1] SELECT * FROM `flowlinks` WHERE process_id=29 AND flow_id=7
+[Context] map[trace.traceContextKeyType:{Span:<nil> sc:{traceID:[0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0] spanID:[0 0 0 0 0 0 0 0] traceFlags:0 traceState:{list:[]} remote:false}}]
+[2026-07-27 04:54:12.957] local.info: [0.418ms] [rows:1] SELECT `next_process_id` FROM `flowlinks` WHERE process_id=29 AND flow_id=7
+[Context] map[trace.traceContextKeyType:{Span:<nil> sc:{traceID:[0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0] spanID:[0 0 0 0 0 0 0 0] traceFlags:0 traceState:{list:[]} remote:false}}]
+[2026-07-27 04:54:12.958] local.info: [0.356ms] [rows:1] SELECT * FROM `processes` WHERE `processes`.`id` = 32
+[Context] map[trace.traceContextKeyType:{Span:<nil> sc:{traceID:[0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0] spanID:[0 0 0 0 0 0 0 0] traceFlags:0 traceState:{list:[]} remote:false}}]
+[2026-07-27 04:54:12.959] local.info: [0.776ms] [rows:3] SELECT * FROM `processes` WHERE `processes`.`id` IN (29,30,31)
+[Context] map[trace.traceContextKeyType:{Span:<nil> sc:{traceID:[0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0] spanID:[0 0 0 0 0 0 0 0] traceFlags:0 traceState:{list:[]} remote:false}}]
+[2026-07-27 04:54:12.959] local.info: [1.976ms] [rows:3] SELECT * FROM `flowlinks` WHERE flow_id=7 AND type != 'Condition' AND process_id not in (32) AND next_process_id > 0
+[Context] map[trace.traceContextKeyType:{Span:<nil> sc:{traceID:[0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0] spanID:[0 0 0 0 0 0 0 0] traceFlags:0 traceState:{list:[]} remote:false}}]
+[2026-07-27 04:54:12.96] local.info: [0.326ms] [rows:1] SELECT * FROM `templates` WHERE `templates`.`id` = 7
+[Context] map[trace.traceContextKeyType:{Span:<nil> sc:{traceID:[0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0] spanID:[0 0 0 0 0 0 0 0] traceFlags:0 traceState:{list:[]} remote:false}}]
+[2026-07-27 04:54:12.96] local.info: [0.830ms] [rows:1] SELECT * FROM `flows` WHERE id=7
+[Context] map[trace.traceContextKeyType:{Span:<nil> sc:{traceID:[0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0] spanID:[0 0 0 0 0 0 0 0] traceFlags:0 traceState:{list:[]} remote:false}}]
+[2026-07-27 04:54:12.96] local.info: [0.375ms] [rows:1] SELECT * FROM `templateforms` WHERE template_id=7
+[Context] map[trace.traceContextKeyType:{Span:<nil> sc:{traceID:[0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0] spanID:[0 0 0 0 0 0 0 0] traceFlags:0 traceState:{list:[]} remote:false}}]
+[2026-07-27 04:54:12.961] local.info: [0.261ms] [rows:1] SELECT `auditor` FROM `flowlinks` WHERE process_id=29 AND type='Emp'
+[Context] map[trace.traceContextKeyType:{Span:<nil> sc:{traceID:[0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0] spanID:[0 0 0 0 0 0 0 0] traceFlags:0 traceState:{list:[]} remote:false}}]
+[2026-07-27 04:54:12.961] local.info: [0.350ms] [rows:1] SELECT * FROM `emps` WHERE id in ('2')
+[Context] map[trace.traceContextKeyType:{Span:<nil> sc:{traceID:[0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0] spanID:[0 0 0 0 0 0 0 0] traceFlags:0 traceState:{list:[]} remote:false}}]
+[2026-07-27 04:54:12.962] local.info: [0.328ms] [rows:0] SELECT * FROM `flowlinks` WHERE process_id = 29 AND flow_id=7 AND type='Sys'
+[Context] map[trace.traceContextKeyType:{Span:<nil> sc:{traceID:[0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0] spanID:[0 0 0 0 0 0 0 0] traceFlags:0 traceState:{list:[]} remote:false}}]
+[2026-07-27 04:54:12.962] local.info: [0.283ms] [rows:0] SELECT `auditor` FROM `flowlinks` WHERE type='Dept' AND process_id=29
+[Context] map[trace.traceContextKeyType:{Span:<nil> sc:{traceID:[0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0] spanID:[0 0 0 0 0 0 0 0] traceFlags:0 traceState:{list:[]} remote:false}}]
+[2026-07-27 04:54:12.962] local.info: [0.262ms] [rows:0] SELECT * FROM `depts` WHERE id in ('')
+[Context] map[trace.traceContextKeyType:{Span:<nil> sc:{traceID:[0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0] spanID:[0 0 0 0 0 0 0 0] traceFlags:0 traceState:{list:[]} remote:false}}]
+[2026-07-27 04:54:12.963] local.info: [0.558ms] [rows:6] SELECT * FROM `flows` WHERE is_publish=1 AND id!=7
+[Context] map[trace.traceContextKeyType:{Span:<nil> sc:{traceID:[0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0] spanID:[0 0 0 0 0 0 0 0] traceFlags:0 traceState:{list:[]} remote:false}}]
+[2026-07-27 04:54:12.964] local.info: [0.486ms] [rows:6] SELECT * FROM `processes` WHERE flow_id=7
+[Context] map[trace.traceContextKeyType:{Span:<nil> sc:{traceID:[0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0] spanID:[0 0 0 0 0 0 0 0] traceFlags:0 traceState:{list:[]} remote:false}}]
+[2026-07-27 04:54:12.964] local.info: [0.382ms] [rows:1] SELECT * FROM `flowlinks` WHERE process_id = 29 AND flow_id=7 AND type='Emp'
+[Context] map[trace.traceContextKeyType:{Span:<nil> sc:{traceID:[0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0] spanID:[0 0 0 0 0 0 0 0] traceFlags:0 traceState:{list:[]} remote:false}}]
+[2026-07-27 04:54:12.965] local.info: [0.412ms] [rows:0] SELECT * FROM `flowlinks` WHERE process_id = 29 AND flow_id=7 AND type='Dept'
+[Context] map[trace.traceContextKeyType:{Span:<nil> sc:{traceID:[0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0] spanID:[0 0 0 0 0 0 0 0] traceFlags:0 traceState:{list:[]} remote:false}}]
