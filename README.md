@@ -1,5 +1,5 @@
 <p align="center">
-  <img src="https://github.com/hulutech-web/workflow_test/blob/master/assets/workflow.png?raw=true" width="300" />
+  <img src="https://github.com/hulutech-web/workflow_test/blob/master/public/workflow.png?raw=true" width="300" />
 </p>
 
 <div align="center">
